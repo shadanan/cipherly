@@ -1,0 +1,20 @@
+GET http://localhost:8000/
+
+###
+
+POST http://localhost:8000/encrypt
+content-type: application/json
+
+{
+    "dek": "123456",
+    "authorized_users": ["user1@gmail.com", "user2@gmail.com"]
+}
+
+###
+
+POST http://localhost:8000/decrypt
+content-type: application/json 
+
+{
+    "envelope_header": "CiQAOimRZULSOmycarMPzoAR7z3ONJ2R3xgwV6pp9G3KE3KW6uYScgCyCHMSBtiY4UeuhTWB7iWxbvRLbI+iQPgxGfAN7MiBtQbtEfuuL5DpOxGabwmGGPTkz/4uWE9ziZkgrgNuh+ZMHPZeHqUvedn/mOyD45PlPD1daP+UNQjkWTpt69EOXEKS/BRULarcB+r8olHxg7MnnA=="
+}

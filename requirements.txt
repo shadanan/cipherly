@@ -1,0 +1,2 @@
+fastapi
+google-cloud-kms
