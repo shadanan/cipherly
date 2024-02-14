@@ -1,9 +1,9 @@
 import base64
 import os
-from typing import Union
+
 
 from fastapi import FastAPI
-from google.cloud import kms, kms_v1
+from google.cloud import kms
 from pydantic import BaseModel
 
 KMS_KEY_NAME = os.environ["KMS_KEY_NAME"]
@@ -29,12 +29,12 @@ class DecryptResponse(BaseModel):
 app = FastAPI()
 
 
-@app.get("/")
+@app.get("/api/hello")
 def read_root():
     return {"Hello": "World"}
 
 
-@app.post("/encrypt")
+@app.post("/api/encrypt")
 def encrypt(request: EncryptRequest) -> EncryptResponse:
     client = kms.KeyManagementServiceClient()
     plaintext = request.model_dump_json().encode()
@@ -48,7 +48,7 @@ def encrypt(request: EncryptRequest) -> EncryptResponse:
     return EncryptResponse(envelope_header=ciphertext_encoded)
 
 
-@app.post("/decrypt")
+@app.post("/api/decrypt")
 def decrypt(request: DecryptRequest) -> DecryptResponse:
     client = kms.KeyManagementServiceClient()
     ciphertext = base64.b64decode(request.envelope_header)

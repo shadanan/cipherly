@@ -1,8 +1,8 @@
-GET http://localhost:8000/
+GET http://localhost:8000/api/hello
 
 ###
 
-POST http://localhost:8000/encrypt
+POST http://localhost:8000/api/encrypt
 content-type: application/json
 
 {
@@ -12,7 +12,7 @@ content-type: application/json
 
 ###
 
-POST http://localhost:8000/decrypt
+POST http://localhost:8000/api/decrypt
 content-type: application/json 
 
 {
