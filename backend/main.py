@@ -1,7 +1,6 @@
 import base64
 import os
 
-
 from fastapi import FastAPI
 from google.cloud import kms
 from pydantic import BaseModel
@@ -9,20 +8,16 @@ from pydantic import BaseModel
 KMS_KEY_NAME = os.environ["KMS_KEY_NAME"]
 
 
-class EncryptRequest(BaseModel):
+class EnvelopeEncrypted(BaseModel):
+    header: str
+
+
+class Envelope(BaseModel):
     dek: str
     authorized_users: list[str]
 
 
-class EncryptResponse(BaseModel):
-    envelope_header: str
-
-
-class DecryptRequest(BaseModel):
-    envelope_header: str
-
-
-class DecryptResponse(BaseModel):
+class Dek(BaseModel):
     dek: str
 
 
@@ -35,29 +30,29 @@ def read_root():
 
 
 @app.post("/api/encrypt")
-def encrypt(request: EncryptRequest) -> EncryptResponse:
+def encrypt(request: Envelope) -> EnvelopeEncrypted:
     client = kms.KeyManagementServiceClient()
-    plaintext = request.model_dump_json().encode()
+    envelope_serialized = request.model_dump_json().encode()
     kms_response = client.encrypt(
         request={
             "name": KMS_KEY_NAME,
-            "plaintext": plaintext,
+            "plaintext": envelope_serialized,
         }
     )
-    ciphertext_encoded = base64.b64encode(kms_response.ciphertext)
-    return EncryptResponse(envelope_header=ciphertext_encoded)
+    envelope_encrypted = base64.b64encode(kms_response.ciphertext).decode()
+    return EnvelopeEncrypted(header=envelope_encrypted)
 
 
 @app.post("/api/decrypt")
-def decrypt(request: DecryptRequest) -> DecryptResponse:
+def decrypt(request: EnvelopeEncrypted) -> Dek:
     client = kms.KeyManagementServiceClient()
-    ciphertext = base64.b64decode(request.envelope_header)
+    envelope_encrypted = base64.b64decode(request.header)
     kms_response = client.decrypt(
         request={
             "name": KMS_KEY_NAME,
-            "ciphertext": ciphertext,
+            "ciphertext": envelope_encrypted,
         }
     )
-    envelope = EncryptRequest.model_validate_json(kms_response.plaintext)
+    envelope = Envelope.model_validate_json(kms_response.plaintext)
     # TODO: Validate that the user is allowed to decrypt
-    return DecryptResponse(dek=envelope.dek)
+    return Dek(dek=envelope.dek)
