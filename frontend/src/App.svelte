@@ -1,53 +1,59 @@
 <script lang="ts">
   let secret = "";
   let authorizedUsers = "";
-  let promise: Promise<any> | null = null;
 
-  async function encrypt() {
-    const body = {
-      dek: "123456",
-      authorized_users: ["user1@gmail.com", "user2@gmail.com"],
-    };
+  type Envelope = {
+    header: string;
+  };
 
+  let promise: Promise<Envelope> | null = null;
+
+  async function encrypt(
+    secret: string,
+    authorizedUsers: string[]
+  ): Promise<Envelope> {
     const res = await fetch("/api/encrypt", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        dek: "123456",
+        authorized_users: authorizedUsers,
+      }),
     });
 
-    const encryptResponse = await res.json();
-
-    if (res.ok) {
-      return encryptResponse["envelope_header"];
-    } else {
-      throw new Error(encryptResponse["envelope_header"]);
-    }
-  }
-
-  function handleClick() {
-    promise = encrypt();
+    return await res.json();
   }
 </script>
 
 <main>
-  <input bind:value={secret} placeholder="Enter your secret here" />
-  <input
-    bind:value={authorizedUsers}
-    placeholder="Enter authorized users here"
-  />
-  <button on:click={handleClick}> Encrypt </button>
-
-  {#if promise !== null}
-    {#await promise}
-      <p>Encrypting</p>
-    {:then number}
-      <p>{number}</p>
-    {:catch error}
-      <p style="color: red">{error.message}</p>
-    {/await}
-  {/if}
+  <div>
+    <input bind:value={secret} placeholder="Enter your secret here" />
+  </div>
+  <div>
+    <input
+      bind:value={authorizedUsers}
+      placeholder="Enter authorized users here"
+    />
+  </div>
+  <div>
+    <button
+      on:click={() => (promise = encrypt(secret, authorizedUsers.split(",")))}
+      >Encrypt</button
+    >
+  </div>
+  <div>
+    {#if promise !== null}
+      {#await promise}
+        <p>Encrypting</p>
+      {:then envelope}
+        <p>{envelope.header}</p>
+      {:catch error}
+        <p style="color: red">{error.message}</p>
+      {/await}
+    {/if}
+  </div>
 </main>
 
 <style>
