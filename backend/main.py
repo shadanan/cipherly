@@ -13,12 +13,14 @@ class EnvelopeEncrypted(BaseModel):
 
 
 class Envelope(BaseModel):
-    dek: str
+    dek: dict
+    iv: list[int]
     authorized_users: list[str]
 
 
 class Dek(BaseModel):
-    dek: str
+    dek: dict
+    iv: list[int]
 
 
 app = FastAPI()
@@ -55,4 +57,4 @@ def decrypt(request: EnvelopeEncrypted) -> Dek:
     )
     envelope = Envelope.model_validate_json(kms_response.plaintext)
     # TODO: Validate that the user is allowed to decrypt
-    return Dek(dek=envelope.dek)
+    return Dek(dek=envelope.dek, iv=envelope.iv)
