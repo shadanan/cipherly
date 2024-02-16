@@ -6,24 +6,44 @@
     header: string;
   };
 
-  let promise: Promise<Envelope> | null = null;
+  let promise: Promise<String> | null = null;
 
   async function encrypt(
     secret: string,
     authorizedUsers: string[]
-  ): Promise<Envelope> {
+  ): Promise<String> {
+    const dek = await window.crypto.subtle.generateKey(
+      { name: "AES-GCM", length: 256 },
+      true,
+      ["encrypt", "decrypt"]
+    );
+    const iv = window.crypto.getRandomValues(new Uint8Array(12));
+
+    const encryptedSecret = await window.crypto.subtle.encrypt(
+      { name: "AES-GCM", iv: iv },
+      dek,
+      new TextEncoder().encode(secret)
+    );
+    const encodedSecret = btoa(
+      String.fromCharCode(...new Uint8Array(encryptedSecret))
+    );
+
+    const encodedDek = await window.crypto.subtle.exportKey("jwk", dek);
+
     const res = await fetch("/api/encrypt", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        dek: "123456",
+        dek: encodedDek,
+        iv: Array.from(iv),
         authorized_users: authorizedUsers,
       }),
     });
 
-    return await res.json();
+    const envelope: Envelope = await res.json();
+    return envelope.header + "." + encodedSecret;
   }
 </script>
 
@@ -47,8 +67,8 @@
     {#if promise !== null}
       {#await promise}
         <p>Encrypting</p>
-      {:then envelope}
-        <p>{envelope.header}</p>
+      {:then payload}
+        <p>{payload}</p>
       {:catch error}
         <p style="color: red">{error.message}</p>
       {/await}

@@ -6,7 +6,17 @@ POST http://localhost:8000/api/encrypt
 content-type: application/json
 
 {
-    "dek": "123456",
+    "dek": {
+        "alg": "A256GCM",
+        "ext": true,
+        "k": "Bm1j1SAekWqsyb1JRvpA1ntVNBaqR_IkjzUsggaSfUg",
+        "key_ops": [
+            "encrypt",
+            "decrypt"
+        ],
+        "kty": "oct"
+    },
+    "iv": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
     "authorized_users": ["user1@gmail.com", "user2@gmail.com"]
 }
 
@@ -16,5 +26,5 @@ POST http://localhost:8000/api/decrypt
 content-type: application/json 
 
 {
-    "envelope_header": "CiQAOimRZULSOmycarMPzoAR7z3ONJ2R3xgwV6pp9G3KE3KW6uYScgCyCHMSBtiY4UeuhTWB7iWxbvRLbI+iQPgxGfAN7MiBtQbtEfuuL5DpOxGabwmGGPTkz/4uWE9ziZkgrgNuh+ZMHPZeHqUvedn/mOyD45PlPD1daP+UNQjkWTpt69EOXEKS/BRULarcB+r8olHxg7MnnA=="
+    "header": "CiQAOimRZYZtDT2BaE6hHbPWQCpPafPZSIIitSDDI8ffV5kDesAShwIAsghzEjOumRSFfmNDnDRA6N4A7bUaUi/KP/Y6juPMqAf/E+J3HKWL2uMwQYJOqYXB5cNVUqsPlOUBQmJTOL9003wnmJCXBl4hU6RAP4GP2OQ9lqUMr5Y4yVGnJCfQB0jZmGHPSO28wJIRm2/iS7vPCyyBUOHrL7PV9GJBfdOfmGQM0XzIyMy+ssl2xsdZ+OeKwdE/Wv9EuXRxG3q+cNYqXdTHqoAKc2i2vMHQkmdYtGO3mxM1+gDsXpWjWMP3OPkkZDR3oHLhvVoVKK4C0KD7qHhoGWQiLKan8V2+4kx95Gl5ltZEscS7U31HvRYePIdgz5MZa2AzaEJqN69AFo3Zf6mqwQyksA=="
 }
