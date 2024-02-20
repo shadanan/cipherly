@@ -6,17 +6,8 @@ POST http://localhost:8000/api/encrypt
 content-type: application/json
 
 {
-    "dek": {
-        "alg": "A256GCM",
-        "ext": true,
-        "k": "Bm1j1SAekWqsyb1JRvpA1ntVNBaqR_IkjzUsggaSfUg",
-        "key_ops": [
-            "encrypt",
-            "decrypt"
-        ],
-        "kty": "oct"
-    },
-    "iv": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+    "dek": "/eIqTqFEp3GimUezaCO1/R/EKmHgqjQLFX1EWqPknoI=",
+    "iv": "4+v+r486s6eqknwY",
     "authorized_users": ["user1@gmail.com", "user2@gmail.com"]
 }
 
@@ -26,5 +17,5 @@ POST http://localhost:8000/api/decrypt
 content-type: application/json 
 
 {
-    "header": "CiQAOimRZYZtDT2BaE6hHbPWQCpPafPZSIIitSDDI8ffV5kDesAShwIAsghzEjOumRSFfmNDnDRA6N4A7bUaUi/KP/Y6juPMqAf/E+J3HKWL2uMwQYJOqYXB5cNVUqsPlOUBQmJTOL9003wnmJCXBl4hU6RAP4GP2OQ9lqUMr5Y4yVGnJCfQB0jZmGHPSO28wJIRm2/iS7vPCyyBUOHrL7PV9GJBfdOfmGQM0XzIyMy+ssl2xsdZ+OeKwdE/Wv9EuXRxG3q+cNYqXdTHqoAKc2i2vMHQkmdYtGO3mxM1+gDsXpWjWMP3OPkkZDR3oHLhvVoVKK4C0KD7qHhoGWQiLKan8V2+4kx95Gl5ltZEscS7U31HvRYePIdgz5MZa2AzaEJqN69AFo3Zf6mqwQyksA=="
+    "header": "CiQAOimRZU0Gt6rvBpBPT7pJotebX3JSS7M0F8DtTuYBARyE4XASewCyCHMS2div5FTZhmKNzYJeoSyOs3Fc0j4h-_cPkmUzj94z1mcsKHgObZwMVq1erJIr8pUoiOORREMxV7YwBH5XyLxmjLKidJsm8FjBXrkZVHwamDkcGI5_dxr8G2siajX7-8m-A7yT1FFQHiQ-oHFT_TBAZyTTI7xX5g=="
 }

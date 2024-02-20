@@ -4,6 +4,30 @@ A web app for sharing secrets.
 
 Development of this app is being presented as a series of videos on [The Friendly TL's YouTube channel](https://www.youtube.com/@FriendlyTL).
 
+## Message Format
+
+### URL Form
+
+The basic URL form for secret cipher messages is:
+
+```
+/schema/<schema>/version/<version>/<header>.<envelope>#<header>.<secret>
+```
+
+The schema is a name for the secret type. Currently only `password` is supported.
+
+The version represents what version the secret type is on. Should be 1.
+
+The header is a URL-safe base64 encoded value that is specific to the schema.
+
+#### Password
+
+For the password schema encrypted message:
+
+```
+/schema/password/version/1/<header>.<envelope>#<secret>
+```
+
 ## Setting up the Development Environment
 
 1. Clone the repository
