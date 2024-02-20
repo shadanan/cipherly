@@ -50,7 +50,6 @@ def encrypt(request: Envelope) -> EnvelopeEncrypted:
             authorized_users=request.authorized_users,
         )
     )
-    print(len(envelope_serialized))
 
     client = kms.KeyManagementServiceClient()
     kms_response = client.encrypt(
@@ -73,7 +72,6 @@ def decrypt(request: EnvelopeEncrypted) -> Dek:
             "ciphertext": envelope_encrypted,
         }
     )
-    print(kms_response.plaintext)
     envelope = EnvelopeProto.read_from(BytesIO(kms_response.plaintext))
     # TODO: Validate that the user is allowed to decrypt
     return Dek(

@@ -49,7 +49,6 @@
       )
     );
     const encodedIv = btoa(String.fromCharCode(...iv));
-    console.log(encodedDek, encodedIv);
 
     // --------------------- PART 2 ---------------------
     // Encrypt encodedDek using kek (via server)
