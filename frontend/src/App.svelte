@@ -4,8 +4,8 @@
   };
 
   type Dek = {
-    dek: { [key: string]: any };
-    iv: number[];
+    dek: string;
+    iv: string;
   };
 
   let secret = "";
@@ -43,10 +43,16 @@
       .replace(/\//g, "_");
 
     // 4. Export the CryptoKey: dek to a portable format
-    const encodedDek = await window.crypto.subtle.exportKey("jwk", dek);
+    const encodedDek = btoa(
+      String.fromCharCode(
+        ...new Uint8Array(await window.crypto.subtle.exportKey("raw", dek))
+      )
+    );
+    const encodedIv = btoa(String.fromCharCode(...iv));
+    console.log(encodedDek, encodedIv);
 
     // --------------------- PART 2 ---------------------
-    // Entypt encodedDek using kek (via server)
+    // Encrypt encodedDek using kek (via server)
     const res = await fetch("/api/encrypt", {
       method: "POST",
       headers: {
@@ -54,7 +60,7 @@
       },
       body: JSON.stringify({
         dek: encodedDek,
-        iv: Array.from(iv),
+        iv: encodedIv,
         authorized_users: authorizedUsers,
       }),
     });
@@ -84,17 +90,22 @@
 
     // --------------------- PART 2 ---------------------
     // Encode dek, iv, encodedSecret into the correct format before decrypting
-    const ivBuffer = new Uint8Array(envelopeDecrypted.iv);
+    const iv = Uint8Array.from(atob(envelopeDecrypted.iv), (c) =>
+      c.charCodeAt(0)
+    );
+    const dek = Uint8Array.from(atob(envelopeDecrypted.dek), (c) =>
+      c.charCodeAt(0)
+    );
 
     const cryptoKey = await window.crypto.subtle.importKey(
-      "jwk",
-      envelopeDecrypted.dek,
+      "raw",
+      dek,
       {
         name: "AES-GCM",
         length: 256,
       },
       true,
-      envelopeDecrypted.dek.key_ops
+      ["encrypt", "decrypt"]
     );
 
     const decodedSecret = new Uint8Array(
@@ -106,7 +117,7 @@
     // --------------------- PART 3 ---------------------
     // Decrypt secret using cryptoKey and iv
     const decryptedSecret = await window.crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: ivBuffer },
+      { name: "AES-GCM", iv: iv },
       cryptoKey,
       decodedSecret
     );
