@@ -38,7 +38,9 @@
     // 3. Encode the Encrypted Secret to a base64-encoded string
     const encodedSecret = btoa(
       String.fromCharCode(...new Uint8Array(encryptedSecret))
-    );
+    )
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_");
 
     // 4. Export the CryptoKey: dek to a portable format
     const encodedDek = await window.crypto.subtle.exportKey("jwk", dek);
@@ -96,7 +98,7 @@
     );
 
     const decodedSecret = new Uint8Array(
-      atob(encodedSecret)
+      atob(encodedSecret.replace(/\-/g, "+").replace(/\_/g, "/"))
         .split("")
         .map((char) => char.charCodeAt(0))
     );

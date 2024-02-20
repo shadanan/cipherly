@@ -41,14 +41,14 @@ def encrypt(request: Envelope) -> EnvelopeEncrypted:
             "plaintext": envelope_serialized,
         }
     )
-    envelope_encrypted = base64.b64encode(kms_response.ciphertext).decode()
+    envelope_encrypted = base64.urlsafe_b64encode(kms_response.ciphertext).decode()
     return EnvelopeEncrypted(header=envelope_encrypted)
 
 
 @app.post("/api/decrypt")
 def decrypt(request: EnvelopeEncrypted) -> Dek:
     client = kms.KeyManagementServiceClient()
-    envelope_encrypted = base64.b64decode(request.header)
+    envelope_encrypted = base64.urlsafe_b64decode(request.header)
     kms_response = client.decrypt(
         request={
             "name": KMS_KEY_NAME,
