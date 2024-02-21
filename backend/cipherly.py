@@ -6,7 +6,7 @@ from fastapi import FastAPI
 from google.cloud import kms
 from pure_protobuf.annotations import Field
 from pure_protobuf.message import BaseMessage
-from pydantic import BaseModel
+from pydantic import BaseModel, BeforeValidator, PlainSerializer
 from typing_extensions import Annotated
 
 KMS_KEY_NAME = os.environ["KMS_KEY_NAME"]
@@ -16,21 +16,22 @@ class EnvelopeEncrypted(BaseModel):
     header: str
 
 
-class Envelope(BaseModel):
-    dek: str
-    iv: str
-    authorized_users: list[str]
+Base64Bytes = Annotated[
+    bytes,
+    PlainSerializer(lambda v: base64.b64encode(v).decode(), str),
+    BeforeValidator(lambda v: v if isinstance(v, bytes) else base64.b64decode(v)),
+]
 
 
-class EnvelopeProto(BaseMessage, BaseModel):
-    dek: Annotated[bytes, Field(1)] = b""
-    iv: Annotated[bytes, Field(2)] = b""
+class Envelope(BaseMessage, BaseModel):
+    dek: Annotated[Base64Bytes, Field(1)] = b""
+    iv: Annotated[Base64Bytes, Field(2)] = b""
     authorized_users: Annotated[list[str], Field(3)] = []
 
 
 class Dek(BaseModel):
-    dek: str
-    iv: str
+    dek: Annotated[Base64Bytes, Field(1)] = b""
+    iv: Annotated[Base64Bytes, Field(2)] = b""
 
 
 app = FastAPI()
@@ -43,19 +44,11 @@ def read_root():
 
 @app.post("/api/encrypt")
 def encrypt(request: Envelope) -> EnvelopeEncrypted:
-    envelope_serialized = bytes(
-        EnvelopeProto(
-            dek=base64.b64decode(request.dek),
-            iv=base64.b64decode(request.iv),
-            authorized_users=request.authorized_users,
-        )
-    )
-
     client = kms.KeyManagementServiceClient()
     kms_response = client.encrypt(
         request={
             "name": KMS_KEY_NAME,
-            "plaintext": envelope_serialized,
+            "plaintext": bytes(request),
         }
     )
     envelope_encrypted = base64.urlsafe_b64encode(kms_response.ciphertext).decode()
@@ -72,9 +65,6 @@ def decrypt(request: EnvelopeEncrypted) -> Dek:
             "ciphertext": envelope_encrypted,
         }
     )
-    envelope = EnvelopeProto.read_from(BytesIO(kms_response.plaintext))
+    envelope = Envelope.read_from(BytesIO(kms_response.plaintext))
     # TODO: Validate that the user is allowed to decrypt
-    return Dek(
-        dek=base64.b64encode(envelope.dek).decode(),
-        iv=base64.b64encode(envelope.iv).decode(),
-    )
+    return Dek(dek=envelope.dek, iv=envelope.iv)
