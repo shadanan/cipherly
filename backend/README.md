@@ -1,19 +1,21 @@
-# Cipherly Backend Server
+# Cipherly Backend
 
-1. Prerequisites:
+## Prerequisites
 
-   - [Homebrew](https://brew.sh/)
-     ```sh
-     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
-     ```
-   - [pipx](https://github.com/pypa/pipx)
-     ```sh
-     brew install pipx
-     ```
-   - [poetry](https://python-poetry.org/docs/#installation)
-     ```
-     pipx install poetry
-     ```
+- [Homebrew](https://brew.sh/)
+  ```sh
+  /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+  ```
+- [pipx](https://github.com/pypa/pipx)
+  ```sh
+  brew install pipx
+  ```
+- [poetry](https://python-poetry.org/docs/#installation)
+  ```
+  pipx install poetry
+  ```
+
+## Setup
 
 1. Change to this folder (`backend`).
 
@@ -38,9 +40,16 @@
    mv ~/Downloads/secret-cipher-*.json .secrets/credentials.json
    ```
 
-1. Start the server.
+## Running the Server
 
-   ```sh
-   export $(cat .env | xargs)
-   poetry run uvicorn cipherly:app --reload
-   ```
+```sh
+export $(cat .env | xargs)
+poetry run uvicorn cipherly:app --reload
+```
+
+## Running Tests
+
+```sh
+export $(cat .env | xargs)
+poetry run pytest
+```
