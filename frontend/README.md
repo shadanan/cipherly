@@ -1,4 +1,6 @@
-# Cipherly Frontend Dev Server
+# Cipherly Frontend
+
+## Setup
 
 1. Change to the `frontend` folder.
 
@@ -12,8 +14,8 @@
    npm install
    ```
 
-1. Run the dev server.
+## Run the Dev Server
 
-   ```sh
-   npm run dev
-   ```
+```sh
+npm run dev
+```
