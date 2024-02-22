@@ -3,10 +3,12 @@ import os
 from io import BytesIO
 
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from google.cloud import kms
 from pure_protobuf.annotations import Field
 from pure_protobuf.message import BaseMessage
 from pydantic import BaseModel, BeforeValidator, PlainSerializer
+from starlette.exceptions import HTTPException
 from typing_extensions import Annotated
 
 KMS_KEY_NAME = os.environ["KMS_KEY_NAME"]
@@ -68,3 +70,17 @@ def decrypt(request: EnvelopeEncrypted) -> Dek:
     envelope = Envelope.read_from(BytesIO(kms_response.plaintext))
     # TODO: Validate that the user is allowed to decrypt
     return Dek(dek=envelope.dek, iv=envelope.iv)
+
+
+class SPAStaticFiles(StaticFiles):
+    async def get_response(self, path: str, scope):
+        try:
+            return await super().get_response(path, scope)
+        except HTTPException as ex:
+            if ex.status_code == 404:
+                return await super().get_response("index.html", scope)
+            else:
+                raise ex
+
+
+app.mount("/", SPAStaticFiles(directory="frontend", html=True), name="static")
