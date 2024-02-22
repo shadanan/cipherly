@@ -1,4 +1,4 @@
-# Secret Cipher
+# Cipherly
 
 A web app for sharing secrets.
 
@@ -8,7 +8,7 @@ Development of this app is being presented as a series of videos on [The Friendl
 
 ### URL Form
 
-The basic URL form for secret cipher messages is:
+The basic URL form for a cipherly message is:
 
 ```
 /schema/<schema>/version/<version>/<header>.<envelope>#<header>.<secret>
@@ -37,61 +37,6 @@ For the password schema encrypted message:
    cd secret-cipher
    ```
 
-### Backend Dev Server
+1. Follow backend dev instructions in [README.md](backend/README.md).
 
-1. Change to the `backend` folder.
-
-   ```sh
-   cd backend
-   ```
-
-1. Create and activate a virtual environment.
-
-   ```sh
-   python3 -m venv .venv
-   source .venv/bin/activate
-   ```
-
-1. Install dependencies.
-
-   ```sh
-   pip install -r requirements.txt
-   ```
-
-1. Create and download the Service Account credentials file from Google Cloud Console.
-
-   [Python FastAPI Dev Server Service Account](https://console.cloud.google.com/iam-admin/serviceaccounts/details/110996570305890367782/keys?project=secret-cipher-413823)
-
-1. Install the credential into the backend server.
-
-   ```sh
-   mkdir .secrets
-   mv ~/Downloads/secret-cipher-*.json .secrets/credentials.json
-   ```
-
-1. Start the server.
-
-   ```sh
-   export $(cat .env | xargs)
-   uvicorn main:app --reload
-   ```
-
-### Frontend Dev Server
-
-1. Change to the `frontend` folder.
-
-   ```sh
-   cd frontend
-   ```
-
-1. Install NPM dependencies.
-
-   ```sh
-   npm install
-   ```
-
-1. Run the dev server.
-
-   ```sh
-   npm run dev
-   ```
+1. Follow frontend dev instructions in [README.md](frontend/README.md).
