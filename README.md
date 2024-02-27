@@ -4,6 +4,26 @@ A web app for sharing secrets.
 
 Development of this app is being presented as a series of videos on [The Friendly TL's YouTube channel](https://www.youtube.com/@FriendlyTL).
 
+## Build Deployment Container
+
+```sh
+# Build production container
+./build.sh
+
+# Run production container
+docker run -p 8000:8000 gcr.io/cipherly/cipherly
+```
+
+## Deploy to Prod
+
+```sh
+# Set the project
+gcloud config set project cipherly
+
+# Upload to GCR
+gcloud builds submit --tag gcr.io/cipherly/cipherly
+```
+
 ## Message Format
 
 ### URL Form

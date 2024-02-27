@@ -1,5 +1,1 @@
-<script>
-  import App from "./App.svelte";
-</script>
-
-<App />
+<h1>Welcome to Cipherly</h1>
