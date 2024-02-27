@@ -1,12 +1,12 @@
 <script>
   import "../app.pcss";
-  import Sidebar from "./Sidebar.svelte";
+  import Sidebar from "./sidebar.svelte";
 </script>
 
 <main>
-  <div class="p-5">
-    <div class="lg:grid lg:grid-cols-4">
-      <div class="lg:col-span-1 p-5">
+  <div class="space-y-6 pb-16">
+    <div class="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
+      <aside class="bg-slate-400 p-2 lg:w-1/5">
         <Sidebar
           items={[
             { title: "Home", href: "/" },
@@ -14,15 +14,15 @@
             { title: "Decrypt", href: "/password" },
           ]}
         />
-      </div>
-      <div class="lg:col-span-3 lg:border-l p-5">
+      </aside>
+      <div class="flex-1 p-2 lg:max-w-2xl">
         <slot />
       </div>
     </div>
-  </div>
 
-  <div class="mt-24 text-gray-500 text-sm text-center">
-    Made with ❤︎ by
-    <a href="https://www.youtube.com/@friendlytl">The FriendlyTL</a>
+    <div class="mt-24 text-gray-500 text-sm text-center">
+      Made with ❤︎ by
+      <a href="https://www.youtube.com/@friendlytl">The FriendlyTL</a>
+    </div>
   </div>
 </main>

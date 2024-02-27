@@ -7,21 +7,24 @@
   import { Separator } from "$lib/components/ui/separator";
   import { Textarea } from "$lib/components/ui/textarea";
 
-  let secret = "";
+  let plaintext = "";
   let password = "";
-  let ciphertext: Promise<string> | null = null;
+  let envelope: Promise<string> | null = null;
 
-  async function encrypt(secret: string, password: string): Promise<string> {
+  async function encrypt(plaintext: string, password: string): Promise<string> {
     const encoder = new TextEncoder();
 
     const salt = Cipherly.generateSalt();
     const key = await Cipherly.deriveKey(encoder.encode(password), salt);
 
     const iv = Cipherly.generateIv();
-    const ciphertext = await Cipherly.encrypt(encoder.encode(secret), key, iv);
+    const ciphertext = await Cipherly.encrypt(
+      encoder.encode(plaintext),
+      key,
+      iv
+    );
 
-    const envelope = Cipherly.encodePasswordEnvelope({ salt, iv, ciphertext });
-    return envelope;
+    return Cipherly.encodePasswordEnvelope({ salt, iv, ciphertext });
   }
 </script>
 
@@ -31,7 +34,7 @@
   <Label for="plaintext">Plaintext</Label>
   <Textarea
     id="plaintext"
-    bind:value={secret}
+    bind:value={plaintext}
     placeholder="The plaintext secret to encrypt"
   />
 </div>
@@ -46,21 +49,21 @@
     />
     <Button
       type="button"
-      on:click={() => (ciphertext = encrypt(secret, password))}
+      on:click={() => (envelope = encrypt(plaintext, password))}
     >
       Encrypt
     </Button>
   </div>
 </div>
 
-{#if ciphertext}
+{#if envelope}
   <Separator class="mt-8 mb-8" />
-  {#await ciphertext}
+  {#await envelope}
     <div class="mt-8">Encrypting...</div>
   {:then envelope}
     {@const url = Cipherly.passwordUrl() + envelope}
-    <Label for="secret">Encrypted Ciphertext</Label>
-    <div id="secret" class="p-3 mb-2 border rounded-md font-mono">
+    <Label for="envelope">Ciphertext Envelope</Label>
+    <div id="envelope" class="p-3 mb-2 border rounded-md font-mono">
       <a href={url}>{envelope}</a>
     </div>
     <Button

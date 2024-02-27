@@ -7,31 +7,21 @@
   import { Separator } from "$lib/components/ui/separator";
   import { Textarea } from "$lib/components/ui/textarea";
 
-  let ciphertext = "";
+  let envelope = "";
   let password = "";
   let plaintext: Promise<string> | null = null;
 
   if (location.hash) {
-    ciphertext = location.hash.slice(1);
+    envelope = location.hash.slice(1);
   }
 
-  async function decrypt(
-    ciphertext: string,
-    password: string
-  ): Promise<string> {
+  async function decrypt(envelope: string, password: string): Promise<string> {
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
 
-    const envelope = Cipherly.decodePasswordEnvelope(ciphertext);
-    const key = await Cipherly.deriveKey(
-      encoder.encode(password),
-      envelope.salt
-    );
-    const secret = await Cipherly.decrypt(
-      envelope.ciphertext,
-      key,
-      envelope.iv
-    );
+    const { salt, iv, ciphertext } = Cipherly.decodePasswordEnvelope(envelope);
+    const key = await Cipherly.deriveKey(encoder.encode(password), salt);
+    const secret = await Cipherly.decrypt(ciphertext, key, iv);
 
     return decoder.decode(secret);
   }
@@ -40,16 +30,16 @@
 <h1 class="text-4xl font-extrabold">Password Based Decryption</h1>
 
 <div class="mt-4">
-  <Label for="plaintext">Ciphertext</Label>
+  <Label for="envelope">Ciphertext Envelope</Label>
   <Textarea
-    id="plaintext"
-    bind:value={ciphertext}
-    placeholder="The ciphertext to be decrypted"
+    id="envelope"
+    bind:value={envelope}
+    placeholder="The ciphertext envelope to be decrypted"
   />
 </div>
 
 <div class="mt-4">
-  <Label for="plaintext">Password</Label>
+  <Label for="password">Password</Label>
   <div class="flex space-x-2">
     <Input
       type="password"
@@ -58,7 +48,7 @@
     />
     <Button
       type="button"
-      on:click={() => (plaintext = decrypt(ciphertext, password))}
+      on:click={() => (plaintext = decrypt(envelope, password))}
     >
       Decrypt
     </Button>
@@ -69,12 +59,14 @@
   <Separator class="mt-8 mb-8" />
   {#await plaintext}
     <div class="mt-8">Decrypting...</div>
-  {:then secret}
-    <Label for="secret">Decrypted Plaintext</Label>
-    <div id="secret" class="p-3 mb-2 border rounded-md font-mono">{secret}</div>
+  {:then plaintext}
+    <Label for="plaintext">Decrypted Plaintext</Label>
+    <div id="plaintext" class="p-3 mb-2 border rounded-md font-mono">
+      {plaintext}
+    </div>
     <Button
       type="button"
-      on:click={() => navigator.clipboard.writeText(secret)}
+      on:click={() => navigator.clipboard.writeText(plaintext)}
     >
       Copy Plaintext
     </Button>
