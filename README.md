@@ -22,6 +22,9 @@ gcloud config set project cipherly
 
 # Upload to GCR
 gcloud builds submit --tag gcr.io/cipherly/cipherly
+
+# Deploy
+gcloud run deploy cipherly --image gcr.io/cipherly/cipherly --platform managed --region us-west1 --allow-unauthenticated
 ```
 
 ## Message Format
