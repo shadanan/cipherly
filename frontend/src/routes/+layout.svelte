@@ -5,17 +5,17 @@
 
 <main>
   <div class="space-y-6 pb-16">
-    <div class="flex flex-col space-y-8 lg:flex-row lg:space-x-12 lg:space-y-0">
+    <div class="flex flex-col space-y-8 lg:flex-row lg:space-y-0">
       <aside class="bg-slate-400 p-2 lg:w-1/5">
         <Sidebar
           items={[
             { title: "Home", href: "/" },
-            { title: "Encrypt", href: "/password/encrypt" },
-            { title: "Decrypt", href: "/password" },
+            { title: "Encrypt", href: "/password/encrypt/" },
+            { title: "Decrypt", href: "/password/" },
           ]}
         />
       </aside>
-      <div class="flex-1 p-2 lg:max-w-2xl">
+      <div class="flex-1 p-2">
         <slot />
       </div>
     </div>
