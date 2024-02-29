@@ -2,7 +2,7 @@ import { encode as pack, decode as unpack } from "@msgpack/msgpack";
 import { Base64 } from "js-base64";
 
 export function passwordUrl(): string {
-  return `${location.protocol}//${location.host}/password#`;
+  return `${location.protocol}//${location.host}/password/#`;
 }
 
 export function generateSalt(): Uint8Array {
