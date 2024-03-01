@@ -8,13 +8,16 @@ Development of this app is being presented as a series of videos on [The Friendl
 
 ```sh
 # Build prod container
-./build.sh
+docker build -t gcr.io/cipherly/cipherly .
 
 # Run prod container at http://127.0.0.1:8000
 docker run -p 8000:8000 gcr.io/cipherly/cipherly
 
-# Deploy to prod
+# Deploy to staging
 ./deploy.sh
+
+# Deploy to prod
+./deploy.sh --prod
 ```
 
 ## Message Format

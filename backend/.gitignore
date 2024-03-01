@@ -1,5 +1,1 @@
-__pycache__
-.pytest_cache
-.secrets
-.venv
-dist
+target

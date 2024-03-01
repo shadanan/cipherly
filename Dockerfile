@@ -1,13 +1,31 @@
-FROM python:3.12-slim
-
-ENV PYTHONUNBUFFERED True
-ENV PORT 8000
+FROM rust AS backend
 
 WORKDIR /app
 
-COPY backend/dist/cipherly-*.whl /app/
-RUN pip install --no-cache-dir cipherly-*.whl
+COPY backend/Cargo.toml backend/Cargo.lock ./
+COPY backend/src ./src
+RUN cargo build --release
 
-COPY frontend/build /app/frontend
+FROM node AS frontend
 
-CMD uvicorn cipherly:app --host 0.0.0.0 --port ${PORT}
+WORKDIR /app
+
+COPY frontend/*.json frontend/*.js frontend/*.cjs frontend/*.ts ./
+RUN npm install
+
+COPY frontend/src ./src
+COPY frontend/static ./static
+RUN npm run build
+
+FROM gcr.io/distroless/cc-debian12 AS runtime
+
+WORKDIR /app
+
+COPY --from=backend /app/target/release/cipherly ./
+COPY --from=frontend /app/build /app/static
+
+ENV PORT=8000
+ENV ROCKET_ADDRESS=0.0.0.0
+EXPOSE ${PORT}
+
+CMD ["./cipherly"]
