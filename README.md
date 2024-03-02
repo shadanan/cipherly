@@ -4,7 +4,7 @@ A web app for sharing secrets.
 
 Development of this app is being presented as a series of videos on [The Friendly TL's YouTube channel](https://www.youtube.com/@FriendlyTL).
 
-## Prod
+## Build
 
 ```sh
 # Build prod container
@@ -12,13 +12,64 @@ docker build -t gcr.io/cipherly/cipherly .
 
 # Run prod container at http://127.0.0.1:8000
 docker run -p 8000:8000 gcr.io/cipherly/cipherly
-
-# Deploy to staging
-./deploy.sh
-
-# Deploy to prod
-./deploy.sh --prod
 ```
+
+## Deploy
+
+Staging is automatically deployed when a PR is merged to main. Prod is deployed by [cutting a new release tag](https://github.com/shadanan/cipherly/releases/new).
+
+### Manual Deployment
+
+```sh
+# Upload to Google Container Registry
+gcloud builds submit --tag gcr.io/cipherly/cipherly
+
+# Staging Deployment
+gcloud run deploy cipherly-staging \
+  --image gcr.io/cipherly/cipherly \
+  --platform managed \
+  --region us-west1 \
+  --allow-unauthenticated
+
+# Prod Deployment
+gcloud run deploy cipherly \
+  --image gcr.io/cipherly/cipherly \
+  --platform managed \
+  --region us-west1 \
+  --allow-unauthenticated
+```
+
+## Setting up the Development Environment
+
+1. Install prerequisites.
+
+   - [Node.js](https://nodejs.org/)
+   - [Rust](https://www.rust-lang.org/)
+     ```sh
+     curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+     ```
+
+1. Clone the repository.
+
+   ```sh
+   git clone git@github.com:shadanan/cipherly.git
+   cd cipherly
+   ```
+
+1. Start a frontend dev server.
+
+   ```sh
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+1. Start a backend server.
+
+   ```sh
+   cd backend
+   cargo watch -x run
+   ```
 
 ## Message Format
 
@@ -43,16 +94,3 @@ For the password schema encrypted message:
 ```
 /schema/password/version/1/<header>.<envelope>#<secret>
 ```
-
-## Setting up the Development Environment
-
-1. Clone the repository
-
-   ```sh
-   git clone git@github.com:shadanan/secret-cipher.git
-   cd secret-cipher
-   ```
-
-1. Follow backend dev instructions in [README.md](backend/README.md).
-
-1. Follow frontend dev instructions in [README.md](frontend/README.md).

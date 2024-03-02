@@ -1,10 +1,15 @@
-FROM rust AS backend
+FROM --platform=amd64 rust AS backend
+# For ARM64, replace all:
+#   `--platform=amd64` -> `--platform=arm64`
+#   `x86_64-unknown-linux-musl` -> `aarch64-unknown-linux-musl`
 
 WORKDIR /app
+RUN rustup target add x86_64-unknown-linux-musl
 
 COPY backend/Cargo.toml backend/Cargo.lock ./
 COPY backend/src ./src
-RUN cargo build --release
+RUN cargo build --release --target x86_64-unknown-linux-musl
+RUN mv target/x86_64-unknown-linux-musl/release/cipherly .
 
 FROM node AS frontend
 
@@ -17,15 +22,14 @@ COPY frontend/src ./src
 COPY frontend/static ./static
 RUN npm run build
 
-FROM gcr.io/distroless/cc-debian12 AS runtime
+FROM scratch AS runtime
 
 WORKDIR /app
 
-COPY --from=backend /app/target/release/cipherly ./
-COPY --from=frontend /app/build /app/static
+COPY --from=backend /app/cipherly ./
+COPY --from=frontend /app/build ./static
 
 ENV PORT=8000
 ENV ROCKET_ADDRESS=0.0.0.0
-EXPOSE ${PORT}
 
 CMD ["./cipherly"]
