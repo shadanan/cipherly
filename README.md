@@ -8,7 +8,7 @@ Development of this app is being presented as a series of videos on [The Friendl
 
 ```sh
 # Build prod container
-docker build -t gcr.io/cipherly/cipherly .
+DOCKER_DEFAULT_PLATFORM=linux/amd64 docker build -t gcr.io/cipherly/cipherly .
 
 # Run prod container at http://127.0.0.1:8000
 docker run -p 8000:8000 gcr.io/cipherly/cipherly

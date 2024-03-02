@@ -1,6 +1,5 @@
-FROM --platform=amd64 rust AS backend
+FROM rust AS backend
 # For ARM64, replace all:
-#   `--platform=amd64` -> `--platform=arm64`
 #   `x86_64-unknown-linux-musl` -> `aarch64-unknown-linux-musl`
 
 WORKDIR /app
