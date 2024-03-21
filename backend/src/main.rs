@@ -4,8 +4,11 @@ extern crate rocket;
 use rocket::fs::FileServer;
 use std::env;
 
+mod google;
+
 #[get("/hello")]
-fn hello() -> &'static str {
+fn hello(claims: google::Claims) -> &'static str {
+    println!("{:?}", claims);
     "Hello, world!"
 }
 

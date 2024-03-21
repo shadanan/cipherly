@@ -1,4 +1,4 @@
-<script>
+<script lang="ts">
   import "../app.pcss";
   import Sidebar from "./sidebar.svelte";
 </script>
@@ -10,6 +10,7 @@
         <Sidebar
           items={[
             { title: "Home", href: "/" },
+            { title: "Login", href: "/login/" },
             { title: "Encrypt", href: "/password/encrypt/" },
             { title: "Decrypt", href: "/password/" },
           ]}
