@@ -1,20 +1,22 @@
 <script lang="ts">
   import "../app.pcss";
+  import Login from "./login.svelte";
   import Sidebar from "./sidebar.svelte";
 </script>
 
 <main>
   <div class="space-y-6 pb-16">
-    <div class="flex flex-col space-y-8 lg:flex-row lg:space-y-0">
-      <aside class="bg-slate-400 p-2 lg:w-1/5">
+    <div class="flex flex-col space-y-8">
+      <aside class="bg-slate-400 p-2 flex">
         <Sidebar
           items={[
             { title: "Home", href: "/" },
-            { title: "Login", href: "/login/" },
             { title: "Encrypt", href: "/password/encrypt/" },
             { title: "Decrypt", href: "/password/" },
           ]}
         />
+        <div class="flex-auto"></div>
+        <Login />
       </aside>
       <div class="flex-1 p-2">
         <slot />

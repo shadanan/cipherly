@@ -26,9 +26,11 @@
   "type": "module",
   "dependencies": {
     "@msgpack/msgpack": "^3.0.0-beta2",
-    "bits-ui": "^0.18.2",
+    "bits-ui": "^0.18.6",
     "clsx": "^2.1.0",
+    "google-oauth-gsi": "^4.0.1",
     "js-base64": "^3.7.7",
+    "jwt-decode": "^4.0.0",
     "lucide-svelte": "^0.338.0",
     "tailwind-merge": "^2.2.1",
     "tailwind-variants": "^0.2.0"
