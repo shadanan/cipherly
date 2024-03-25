@@ -100,7 +100,7 @@ mod tests {
     #[tokio::test]
     async fn fetch_succeeds() {
         let result = fetch().await;
-        println!("{:?}", result);
+        assert!(result.is_ok());
     }
 
     fn certs() -> Certs {

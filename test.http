@@ -1,0 +1,8 @@
+POST http://localhost:8000/api/encrypt
+Content-Type: application/json
+
+{
+  "dek": "/eIqTqFEp3GimUezaCO1/R/EKmHgqjQLFX1EWqPknoI=",
+  "iv": "4+v+r486s6eqknwY",
+  "authorized_users": ["shadanan@gmail.com", "user1@gmail.com"]
+}
