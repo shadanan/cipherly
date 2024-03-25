@@ -1,14 +1,11 @@
 FROM rust AS backend
-# For ARM64, replace all:
-#   `x86_64-unknown-linux-musl` -> `aarch64-unknown-linux-musl`
 
 WORKDIR /app
-RUN rustup target add x86_64-unknown-linux-musl
 
 COPY backend/Cargo.toml backend/Cargo.lock ./
 COPY backend/src ./src
-RUN cargo build --release --target x86_64-unknown-linux-musl
-RUN mv target/x86_64-unknown-linux-musl/release/cipherly .
+RUN cargo build --release
+RUN mv target/release/cipherly .
 
 FROM node AS frontend
 
@@ -21,7 +18,7 @@ COPY frontend/src ./src
 COPY frontend/static ./static
 RUN npm run build
 
-FROM scratch AS runtime
+FROM gcr.io/distroless/cc-debian12 AS runtime
 
 WORKDIR /app
 
