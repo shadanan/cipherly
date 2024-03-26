@@ -37,14 +37,14 @@ export function decodePasswordEnvelope(hash: string): PasswordEnvelope {
 
 export async function deriveKey(
   password: Uint8Array,
-  salt: Uint8Array
+  salt: Uint8Array,
 ): Promise<CryptoKey> {
   const keyMaterial = await crypto.subtle.importKey(
     "raw",
     password,
     { name: "PBKDF2" },
     false,
-    ["deriveKey"]
+    ["deriveKey"],
   );
 
   return crypto.subtle.deriveKey(
@@ -57,26 +57,26 @@ export async function deriveKey(
     keyMaterial,
     { name: "AES-GCM", length: 256 },
     true,
-    ["encrypt", "decrypt"]
+    ["encrypt", "decrypt"],
   );
 }
 
 export async function encrypt(
   data: Uint8Array,
   key: CryptoKey,
-  iv: Uint8Array
+  iv: Uint8Array,
 ): Promise<Uint8Array> {
   return new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data)
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, data),
   );
 }
 
 export async function decrypt(
   data: Uint8Array,
   key: CryptoKey,
-  iv: Uint8Array
+  iv: Uint8Array,
 ): Promise<Uint8Array> {
   return new Uint8Array(
-    await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data)
+    await crypto.subtle.decrypt({ name: "AES-GCM", iv }, key, data),
   );
 }
