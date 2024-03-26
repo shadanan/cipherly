@@ -89,12 +89,15 @@ fn rocket() -> _ {
 
 #[cfg(test)]
 mod tests {
+    use std::env;
+
     use super::rocket;
     use rocket::http::Status;
     use rocket::local::blocking::Client;
 
     #[test]
-    fn whatever() {
+    fn post_encrypt_succeeds() {
+        env::set_var("KEK", "0MmC28nuauYqXE7mZ5JL08ydOkmk+A5q3Y0tsn5+izg=");
         let client = Client::tracked(rocket()).expect("valid rocket instance");
         let resp = client.post("/api/encrypt").body("{ \"dek\": \"/eIqTqFEp3GimUezaCO1/R/EKmHgqjQLFX1EWqPknoI=\", \"iv\": \"4+v+r486s6eqknwY\", \"authorized_users\": [\"user1@gmail.com\", \"user2@gmail.com\"] }").dispatch();
         assert!(resp.status() == Status::Ok);
