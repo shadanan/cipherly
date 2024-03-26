@@ -72,6 +72,20 @@ fn encrypt(envelope: Json<Envelope>, kek: &State<Kek>) -> Json<EncodedEnvelope> 
     })
 }
 
+#[post("/decrypt", data = "<encoded_envelope>")]
+fn decrypt(encoded_envelope: Json<EncodedEnvelope>, kek: &State<Kek>) -> Json<Envelope> {
+    let header = BASE64_STANDARD.decode(&encoded_envelope.header).unwrap();
+    let ee: EncryptedEnvelope = rmp_serde::from_slice(&header).unwrap();
+    let plaintext = kek
+        .0
+        .decrypt(ee.nonce.as_slice().into(), ee.ciphertext.as_slice())
+        .unwrap();
+    let envelope: Envelope = rmp_serde::from_slice(&plaintext).unwrap();
+    // TODO: validate that the user is in the envelope
+    println!("{:?}", envelope);
+    Json(envelope)
+}
+
 struct Kek(AesGcm<Aes256, UInt<UInt<UInt<UInt<UTerm, B1>, B1>, B0>, B0>>);
 
 #[launch]
@@ -83,7 +97,7 @@ fn rocket() -> _ {
     let cipher = Aes256Gcm::new(&kek);
     rocket::build()
         .manage(Kek(cipher))
-        .mount("/api", routes![time, encrypt])
+        .mount("/api", routes![time, encrypt, decrypt])
         .mount("/", FileServer::from("./static"))
 }
 
@@ -100,6 +114,14 @@ mod tests {
         env::set_var("KEK", "0MmC28nuauYqXE7mZ5JL08ydOkmk+A5q3Y0tsn5+izg=");
         let client = Client::tracked(rocket()).expect("valid rocket instance");
         let resp = client.post("/api/encrypt").body("{ \"dek\": \"/eIqTqFEp3GimUezaCO1/R/EKmHgqjQLFX1EWqPknoI=\", \"iv\": \"4+v+r486s6eqknwY\", \"authorized_users\": [\"user1@gmail.com\", \"user2@gmail.com\"] }").dispatch();
+        assert!(resp.status() == Status::Ok);
+    }
+
+    #[test]
+    fn post_decrypt_succeeds() {
+        env::set_var("KEK", "0MmC28nuauYqXE7mZ5JL08ydOkmk+A5q3Y0tsn5+izg=");
+        let client = Client::tracked(rocket()).expect("valid rocket instance");
+        let resp = client.post("/api/decrypt").body("{\"header\":\"kpxAWcz8zO7M1sytzMLMqT4NzKVL3ABxzOlAzIzM9VgORGLM6yvM83MVTMztJDnMxCXM5sy4aUfMpczFZQ/MvnPMrcyPzPZRzPJYzPXM7lHM18y5LglMzKw3zJMFzJ/Mmz3MzMzdAsyRfMz1zMTMkDkJzIdbzPAIJczdzNDM6sznzJbMzkddJsydLk7MkcySNF9fVQrMlREFRsyrIGJhzN7MgMzVMD93VcyWW1BizKDMzsy4zL/Mh8yQGcziP04=\"}").dispatch();
         assert!(resp.status() == Status::Ok);
     }
 }
