@@ -14,7 +14,7 @@ const googleProvider = new GoogleOAuthProvider({
 });
 
 export const token = writable<string | null>(
-  sessionStorage.getItem("credential") || null
+  sessionStorage.getItem("credential") || null,
 );
 
 export function logout() {
