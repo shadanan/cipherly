@@ -2,15 +2,8 @@
 extern crate rocket;
 
 use aes_gcm::{
-    aead::{
-        consts::{B0, B1},
-        Aead, KeyInit, OsRng,
-    },
-    aes::{
-        cipher::typenum::{UInt, UTerm},
-        Aes256,
-    },
-    AeadCore, Aes256Gcm, AesGcm, Key,
+    aead::{Aead, KeyInit, OsRng},
+    AeadCore, Aes256Gcm, Key,
 };
 use base64::prelude::*;
 use rmp_serde::Serializer;
@@ -86,7 +79,7 @@ fn decrypt(encoded_envelope: Json<EncodedEnvelope>, kek: &State<Kek>) -> Json<En
     Json(envelope)
 }
 
-struct Kek(AesGcm<Aes256, UInt<UInt<UInt<UInt<UTerm, B1>, B1>, B0>, B0>>);
+struct Kek(Aes256Gcm);
 
 #[launch]
 fn rocket() -> _ {
@@ -94,7 +87,7 @@ fn rocket() -> _ {
     let base64_kek = env::var("KEK").unwrap();
     let bytes_kek = BASE64_STANDARD.decode(base64_kek).unwrap();
     let kek = Key::<Aes256Gcm>::from_slice(&bytes_kek);
-    let cipher = Aes256Gcm::new(&kek);
+    let cipher = Aes256Gcm::new(kek);
     rocket::build()
         .manage(Kek(cipher))
         .mount("/api", routes![time, encrypt, decrypt])
