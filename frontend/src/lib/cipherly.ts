@@ -148,3 +148,32 @@ export async function authEncrypt(
   const result = await response.json();
   return decodeBase64(result.header);
 }
+
+type AuthHeader = {
+  dek: CryptoKey;
+  iv: Uint8Array;
+};
+export async function authDecrypt(header: Uint8Array): Promise<AuthHeader> {
+  const response = await fetch("/api/decrypt", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      header: encodeBase64(header),
+    }),
+  });
+  if (!response.ok) {
+    throw { code: response.status, message: response.statusText };
+  }
+  const result = await response.json();
+  const dek = await crypto.subtle.importKey(
+    "raw",
+    decodeBase64(result.dek),
+    { name: "AES-GCM" },
+    true,
+    ["encrypt", "decrypt"],
+  );
+
+  return { dek, iv: decodeBase64(result.iv) };
+}

@@ -67,7 +67,7 @@ fn encrypt(envelope: Json<Envelope>, kek: &State<Kek>) -> Json<EncodedEnvelope> 
 
 #[post("/decrypt", data = "<encoded_envelope>")]
 fn decrypt(encoded_envelope: Json<EncodedEnvelope>, kek: &State<Kek>) -> Json<Envelope> {
-    let header = BASE64_STANDARD.decode(&encoded_envelope.header).unwrap();
+    let header = BASE64_URL_SAFE.decode(&encoded_envelope.header).unwrap();
     let ee: EncryptedEnvelope = rmp_serde::from_slice(&header).unwrap();
     let plaintext = kek
         .0
