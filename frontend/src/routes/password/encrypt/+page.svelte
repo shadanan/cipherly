@@ -12,14 +12,12 @@
   let envelope: Promise<string> | null = null;
 
   async function encrypt(plaintext: string, password: string): Promise<string> {
-    const encoder = new TextEncoder();
-
     const salt = Cipherly.generateSalt();
-    const key = await Cipherly.deriveKey(encoder.encode(password), salt);
+    const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
 
     const iv = Cipherly.generateIv();
     const ciphertext = await Cipherly.encrypt(
-      encoder.encode(plaintext),
+      Cipherly.encodeUtf8(plaintext),
       key,
       iv
     );

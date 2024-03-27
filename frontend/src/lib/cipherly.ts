@@ -17,6 +17,14 @@ function decodeMessagePack(data: string) {
   return unpack(decodeBase64(data));
 }
 
+export function encodeUtf8(data: string): Uint8Array {
+  return new TextEncoder().encode(data);
+}
+
+export function decodeUtf8(data: Uint8Array): string {
+  return new TextDecoder().decode(data);
+}
+
 export function generateSalt(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(16));
 }

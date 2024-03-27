@@ -16,14 +16,10 @@
   }
 
   async function decrypt(envelope: string, password: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
-
     const { salt, iv, ciphertext } = Cipherly.decodePasswordEnvelope(envelope);
-    const key = await Cipherly.deriveKey(encoder.encode(password), salt);
+    const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
     const secret = await Cipherly.decrypt(ciphertext, key, iv);
-
-    return decoder.decode(secret);
+    return Cipherly.decodeUtf8(secret);
   }
 </script>
 
