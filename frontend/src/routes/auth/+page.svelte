@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { logout, token } from "$lib/auth";
+  import { login, logout, token } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
@@ -41,11 +41,17 @@
   />
 </div>
 
-<div class="mt-4">
-  <Button type="button" on:click={() => (plaintext = decrypt(envelope))}>
-    Decrypt
-  </Button>
-</div>
+{#if $token === null}
+  <div class="mt-4">
+    <Button type="button" on:click={login}>Login to Decrypt</Button>
+  </div>
+{:else}
+  <div class="mt-4">
+    <Button type="button" on:click={() => (plaintext = decrypt(envelope))}>
+      Decrypt
+    </Button>
+  </div>
+{/if}
 
 {#if plaintext}
   <Separator class="mt-8 mb-8" />
