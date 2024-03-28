@@ -1,8 +1,8 @@
 <script lang="ts">
+  import { logout, token } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Separator } from "$lib/components/ui/separator";
   import { Textarea } from "$lib/components/ui/textarea";
@@ -14,11 +14,15 @@
     envelope = location.hash.slice(1);
   }
 
-  async function decrypt(envelope: string): Promise<string> {
-    const decodedEnvelope = Cipherly.decodeAuthEnvelope(envelope);
-    const header = await Cipherly.authDecrypt(decodedEnvelope.header);
+  async function decrypt(encodedEnvelope: string): Promise<string> {
+    if ($token === null) {
+      logout();
+      throw new Error("Cannot decrypt without logging in.");
+    }
+    const envelope = Cipherly.decodeAuthEnvelope(encodedEnvelope);
+    const header = await Cipherly.kekDecrypt(envelope.kekEncryptedDek, $token);
     const plaintext = await Cipherly.decrypt(
-      decodedEnvelope.ciphertext,
+      envelope.cipherText,
       header.dek,
       header.iv
     );

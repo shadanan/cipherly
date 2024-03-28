@@ -1,29 +1,29 @@
-use std::error::Error;
-
 use jsonwebtoken::DecodingKey;
 use jsonwebtoken::Validation;
 use rocket::request::FromRequest;
+use rocket::State;
 use rocket::{http::Status, request::Outcome, Request};
 use serde::{Deserialize, Serialize};
+use std::error::Error;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Key {
-    kid: String,
-    alg: String,
-    n: String,
-    e: String,
-    kty: String,
-    r#use: String,
+    pub kid: String,
+    pub alg: String,
+    pub n: String,
+    pub e: String,
+    pub kty: String,
+    pub r#use: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Certs {
-    keys: Vec<Key>,
+    pub keys: Vec<Key>,
 }
 
 impl Certs {
-    pub fn get(self, kid: &str) -> Result<DecodingKey, Box<dyn Error>> {
-        for key in self.keys {
+    pub fn get(&self, kid: &str) -> Result<DecodingKey, Box<dyn Error>> {
+        for key in &self.keys {
             if key.kid == *kid {
                 return Ok(DecodingKey::from_rsa_components(&key.n, &key.e)?);
             }
@@ -32,23 +32,21 @@ impl Certs {
     }
 }
 
-pub async fn fetch() -> Result<Certs, Box<dyn Error>> {
-    let client = reqwest::Client::new();
+pub fn fetch() -> Result<Certs, Box<dyn Error>> {
+    let client = reqwest::blocking::Client::new();
     let resp = client
         .get("https://www.googleapis.com/oauth2/v3/certs")
-        .send()
-        .await?
-        .text()
-        .await?;
+        .send()?
+        .text()?;
     let certs: Certs = serde_json::from_str(&resp)?;
     Ok(certs)
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    sub: String,
-    email: String,
-    name: String,
+    pub sub: String,
+    pub email: String,
+    pub name: String,
 }
 
 #[rocket::async_trait]
@@ -56,6 +54,7 @@ impl<'r> FromRequest<'r> for Claims {
     type Error = ();
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
+        let certs = request.guard::<&State<Certs>>().await.unwrap();
         let Some(auth_header) = request.headers().get_one("Authorization") else {
             return Outcome::Error((Status::Unauthorized, ()));
         };
@@ -64,9 +63,6 @@ impl<'r> FromRequest<'r> for Claims {
             return Outcome::Error((Status::Unauthorized, ()));
         }
         let bearer = parts[1];
-        let Ok(certs) = fetch().await else {
-            return Outcome::Error((Status::InternalServerError, ()));
-        };
         let Ok(header) = jsonwebtoken::decode_header(bearer) else {
             return Outcome::Error((Status::Unauthorized, ()));
         };
@@ -97,9 +93,9 @@ mod tests {
     use crate::google::fetch;
     use crate::google::{Certs, Key};
 
-    #[tokio::test]
-    async fn fetch_succeeds() {
-        let result = fetch().await;
+    #[test]
+    fn fetch_succeeds() {
+        let result = fetch();
         assert!(result.is_ok());
     }
 

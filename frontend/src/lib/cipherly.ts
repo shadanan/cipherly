@@ -109,8 +109,8 @@ export async function decrypt(
 }
 
 type AuthEnvelope = {
-  header: Uint8Array;
-  ciphertext: Uint8Array;
+  kekEncryptedDek: Uint8Array;
+  cipherText: Uint8Array;
 };
 
 export function encodeAuthEnvelope(envelope: AuthEnvelope): string {
@@ -125,7 +125,7 @@ export function authUrl(): string {
   return `${location.protocol}//${location.host}/auth/#`;
 }
 
-export async function authEncrypt(
+export async function kekEncrypt(
   dek: CryptoKey,
   iv: Uint8Array,
   emails: string[],
@@ -153,11 +153,16 @@ type AuthHeader = {
   dek: CryptoKey;
   iv: Uint8Array;
 };
-export async function authDecrypt(header: Uint8Array): Promise<AuthHeader> {
+
+export async function kekDecrypt(
+  header: Uint8Array,
+  token: string,
+): Promise<AuthHeader> {
   const response = await fetch("/api/decrypt", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Authorization: "Bearer " + token,
     },
     body: JSON.stringify({
       header: encodeBase64(header),

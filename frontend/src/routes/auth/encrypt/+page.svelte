@@ -14,14 +14,13 @@
   async function encrypt(plaintext: string, email: string): Promise<string> {
     const dek = await Cipherly.generateKey();
     const iv = Cipherly.generateIv();
-    const authHeader = await Cipherly.authEncrypt(dek, iv, [email]);
-    const ciphertext = await Cipherly.encrypt(
+    const cipherText = await Cipherly.encrypt(
       Cipherly.encodeUtf8(plaintext),
       dek,
       iv
     );
-
-    return Cipherly.encodeAuthEnvelope({ header: authHeader, ciphertext });
+    const kekEncryptedDek = await Cipherly.kekEncrypt(dek, iv, [email]);
+    return Cipherly.encodeAuthEnvelope({ kekEncryptedDek, cipherText });
   }
 </script>
 
