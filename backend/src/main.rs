@@ -159,6 +159,7 @@ mod tests {
     #[test]
     fn get_time_succeeds() {
         env::set_var("ROCKET_ENV", "test");
+        env::set_var("KEK", TEST_KEK);
         let client = Client::tracked(rocket().manage(test_certs())).expect("valid rocket instance");
         let resp = client
             .get("/api/time")
