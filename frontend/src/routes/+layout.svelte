@@ -11,8 +11,10 @@
         <Sidebar
           items={[
             { title: "Home", href: "/" },
-            { title: "Encrypt", href: "/password/encrypt/" },
-            { title: "Decrypt", href: "/password/" },
+            { title: "Password Encrypt", href: "/password/encrypt/" },
+            { title: "Password Decrypt", href: "/password/" },
+            { title: "Authorization Encrypt", href: "/auth/encrypt/" },
+            { title: "Authorization Decrypt", href: "/auth/" },
           ]}
         />
         <div class="flex-auto"></div>
