@@ -34,7 +34,7 @@ fn seal(envelope: Json<Envelope>, kek: &State<Aes256Gcm>) -> Result<Json<SealedE
     let data =
         to_vec(&(nonce.to_vec(), ciphertext.to_vec())).map_err(|_| Status::InternalServerError)?;
     Ok(Json(SealedEnvelope {
-        data: BASE64_URL_SAFE_NO_PAD.encode(&data),
+        data: BASE64_URL_SAFE_NO_PAD.encode(data),
     }))
 }
 
