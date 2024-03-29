@@ -68,12 +68,19 @@
     >
       Copy Plaintext
     </Button>
-  {:catch}
+  {:catch err}
     <Alert.Root variant="destructive">
-      <Alert.Title>Failed to Decrypt</Alert.Title>
-      <Alert.Description>
-        Password is incorrect or ciphertext is invalid.
-      </Alert.Description>
+      {#if err.code === 401}
+        <Alert.Title>Unauthorized</Alert.Title>
+        <Alert.Description>
+          You are not authorized to decrypt this secret.
+        </Alert.Description>
+      {:else}
+        <Alert.Title>Failed to Decrypt</Alert.Title>
+        <Alert.Description>
+          Password is incorrect or ciphertext is invalid.
+        </Alert.Description>
+      {/if}
     </Alert.Root>
   {/await}
 {/if}
