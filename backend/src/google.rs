@@ -6,7 +6,7 @@ use rocket::{http::Status, request::Outcome, Request};
 use serde::{Deserialize, Serialize};
 use std::error::Error;
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 struct Key {
     kid: String,
     alg: String,
@@ -16,7 +16,7 @@ struct Key {
     r#use: String,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Certs {
     keys: Vec<Key>,
 }
