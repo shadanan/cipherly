@@ -59,7 +59,9 @@ impl<'r> FromRequest<'r> for Claims {
     type Error = ();
 
     async fn from_request(request: &'r Request<'_>) -> Outcome<Self, Self::Error> {
-        let certs = request.guard::<&State<Certs>>().await.unwrap();
+        let Outcome::Success(certs) = request.guard::<&State<Certs>>().await else {
+            return Outcome::Error((Status::InternalServerError, ()));
+        };
         let Some(auth_header) = request.headers().get_one("Authorization") else {
             return Outcome::Error((Status::Unauthorized, ()));
         };
