@@ -55,14 +55,14 @@
   <Separator class="mt-8 mb-8" />
   {#await plainText}
     <div class="mt-8">Decrypting...</div>
-  {:then plaintext}
-    <Label for="plaintext">Decrypted Plaintext</Label>
-    <div id="plaintext" class="p-3 mb-2 border rounded-md font-mono">
-      {plaintext}
+  {:then plainText}
+    <Label for="plainText">Decrypted Plaintext</Label>
+    <div id="plainText" class="p-3 mb-2 border rounded-md font-mono">
+      {plainText}
     </div>
     <Button
       type="button"
-      on:click={() => navigator.clipboard.writeText(plaintext)}
+      on:click={() => navigator.clipboard.writeText(plainText)}
     >
       Copy Plaintext
     </Button>
