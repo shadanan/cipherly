@@ -19,11 +19,8 @@
       dek,
       iv
     );
-    const encryptedEnvelope = await Cipherly.seal({ dek, iv, emails: [email] });
-    return Cipherly.encodeAuthPayload({
-      sealedEnvelope: encryptedEnvelope,
-      cipherText,
-    });
+    const sealedEnvelope = await Cipherly.seal({ dek, iv, emails: [email] });
+    return Cipherly.encodeAuthPayload({ sealedEnvelope, cipherText });
   }
 </script>
 
