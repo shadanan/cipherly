@@ -7,17 +7,17 @@
   import { Separator } from "$lib/components/ui/separator";
   import { Textarea } from "$lib/components/ui/textarea";
 
-  let plaintext = "";
+  let plainText = "";
   let password = "";
   let payload: Promise<string> | null = null;
 
-  async function encrypt(plaintext: string, password: string): Promise<string> {
+  async function encrypt(plainText: string, password: string): Promise<string> {
     const salt = Cipherly.generateSalt();
     const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
 
     const iv = Cipherly.generateIv();
     const ciphertext = await Cipherly.encrypt(
-      Cipherly.encodeUtf8(plaintext),
+      Cipherly.encodeUtf8(plainText),
       key,
       iv
     );
@@ -29,25 +29,26 @@
 <h1 class="text-4xl font-extrabold">Password Based Encryption</h1>
 
 <div class="mt-4">
-  <Label for="plaintext">Plaintext</Label>
+  <Label for="plainText">Plaintext</Label>
   <Textarea
-    id="plaintext"
-    bind:value={plaintext}
+    id="plainText"
+    bind:value={plainText}
     placeholder="The plaintext secret to encrypt"
   />
 </div>
 
 <div class="mt-4">
-  <Label for="plaintext">Password</Label>
+  <Label for="password">Password</Label>
   <div class="flex space-x-2">
     <Input
+      id="password"
       type="password"
       placeholder="The password to use for encryption"
       bind:value={password}
     />
     <Button
       type="button"
-      on:click={() => (payload = encrypt(plaintext, password))}
+      on:click={() => (payload = encrypt(plainText, password))}
     >
       Encrypt
     </Button>
@@ -58,15 +59,15 @@
   <Separator class="mt-8 mb-8" />
   {#await payload}
     <div class="mt-8">Encrypting...</div>
-  {:then envelope}
-    {@const url = Cipherly.passwordUrl() + envelope}
-    <Label for="envelope">Ciphertext Payload</Label>
-    <div id="envelope" class="p-3 mb-2 border rounded-md font-mono">
-      <a href={url}>{envelope}</a>
+  {:then payload}
+    {@const url = Cipherly.passwordUrl() + payload}
+    <Label for="payload">Ciphertext Payload</Label>
+    <div id="payload" class="p-3 mb-2 border rounded-md font-mono">
+      <a href={url}>{payload}</a>
     </div>
     <Button
       type="button"
-      on:click={() => navigator.clipboard.writeText(envelope)}
+      on:click={() => navigator.clipboard.writeText(payload)}
     >
       Copy Ciphertext
     </Button>

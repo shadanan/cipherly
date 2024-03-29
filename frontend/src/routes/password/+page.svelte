@@ -9,7 +9,7 @@
 
   let payload = "";
   let password = "";
-  let plaintext: Promise<string> | null = null;
+  let plainText: Promise<string> | null = null;
 
   if (location.hash) {
     payload = location.hash.slice(1);
@@ -18,8 +18,8 @@
   async function decrypt(payload: string, password: string): Promise<string> {
     const { salt, iv, cipherText } = Cipherly.decodePasswordPayload(payload);
     const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
-    const secret = await Cipherly.decrypt(cipherText, key, iv);
-    return Cipherly.decodeUtf8(secret);
+    const plainText = await Cipherly.decrypt(cipherText, key, iv);
+    return Cipherly.decodeUtf8(plainText);
   }
 </script>
 
@@ -44,16 +44,16 @@
     />
     <Button
       type="button"
-      on:click={() => (plaintext = decrypt(payload, password))}
+      on:click={() => (plainText = decrypt(payload, password))}
     >
       Decrypt
     </Button>
   </div>
 </div>
 
-{#if plaintext}
+{#if plainText}
   <Separator class="mt-8 mb-8" />
-  {#await plaintext}
+  {#await plainText}
     <div class="mt-8">Decrypting...</div>
   {:then plaintext}
     <Label for="plaintext">Decrypted Plaintext</Label>
