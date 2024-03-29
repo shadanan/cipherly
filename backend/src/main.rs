@@ -1,13 +1,11 @@
-#[macro_use]
-extern crate rocket;
-
 use aes_gcm::{
     aead::{Aead, KeyInit, OsRng},
     AeadCore, Aes256Gcm, Key,
 };
 use base64::prelude::*;
-use rmp_serde::Serializer;
-use rocket::{fs::FileServer, State};
+use google::Certs;
+use rmp_serde::{from_slice, to_vec};
+use rocket::{fs::FileServer, launch, post, routes, Build, Rocket, State};
 use rocket::{http::Status, serde::json::Json};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -18,100 +16,78 @@ mod google;
 struct Envelope {
     dek: String,
     iv: String,
-    authorized_users: Vec<String>,
+    emails: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct EncryptedEnvelope {
-    nonce: Vec<u8>,
-    ciphertext: Vec<u8>,
+struct SealedEnvelope {
+    data: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct EncodedEnvelope {
-    header: String,
-}
-
-#[post("/encrypt", data = "<envelope>")]
-fn encrypt(
-    envelope: Json<Envelope>,
-    kek: &State<Aes256Gcm>,
-) -> Result<Json<EncodedEnvelope>, Status> {
-    let mut buf = Vec::new();
-    envelope
-        .serialize(&mut Serializer::new(&mut buf))
-        .map_err(|_| Status::InternalServerError)?;
+#[post("/seal", data = "<envelope>")]
+fn seal(envelope: Json<Envelope>, kek: &State<Aes256Gcm>) -> Result<Json<SealedEnvelope>, Status> {
+    let buf = to_vec::<Envelope>(&envelope).map_err(|_| Status::InternalServerError)?;
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
     let ciphertext = kek
         .encrypt(&nonce, buf.as_slice())
         .map_err(|_| Status::InternalServerError)?;
-
-    let mut header = Vec::new();
-    let ee = EncryptedEnvelope {
-        nonce: nonce.to_vec(),
-        ciphertext: ciphertext.to_vec(),
-    };
-    ee.serialize(&mut Serializer::new(&mut header))
-        .map_err(|_| Status::InternalServerError)?;
-    let encoded_header = BASE64_URL_SAFE_NO_PAD.encode(&header);
-    Ok(Json(EncodedEnvelope {
-        header: encoded_header,
+    let data =
+        to_vec(&(nonce.to_vec(), ciphertext.to_vec())).map_err(|_| Status::InternalServerError)?;
+    Ok(Json(SealedEnvelope {
+        data: BASE64_URL_SAFE_NO_PAD.encode(data),
     }))
 }
 
-#[post("/decrypt", data = "<encoded_envelope>")]
-fn decrypt(
-    encoded_envelope: Json<EncodedEnvelope>,
+#[post("/unseal", data = "<sealed_envelope>")]
+fn unseal(
+    sealed_envelope: Json<SealedEnvelope>,
     kek: &State<Aes256Gcm>,
     claims: google::Claims,
 ) -> Result<Json<Envelope>, Status> {
-    println!("{:?}", encoded_envelope.header);
-    let header = BASE64_URL_SAFE_NO_PAD
-        .decode(&encoded_envelope.header)
+    let data = BASE64_URL_SAFE_NO_PAD
+        .decode(&sealed_envelope.data)
         .map_err(|_| Status::Unauthorized)?;
-    let ee: EncryptedEnvelope = rmp_serde::from_slice(&header).map_err(|_| Status::Unauthorized)?;
+    let (nonce, ciphertext): (Vec<u8>, Vec<u8>) =
+        from_slice(&data).map_err(|_| Status::Unauthorized)?;
     let plaintext = kek
-        .decrypt(ee.nonce.as_slice().into(), ee.ciphertext.as_slice())
+        .decrypt(nonce.as_slice().into(), ciphertext.as_slice())
         .map_err(|_| Status::Unauthorized)?;
-    let envelope: Envelope = rmp_serde::from_slice(&plaintext).map_err(|_| Status::Unauthorized)?;
-    if !envelope.authorized_users.contains(&claims.email) {
+    let envelope: Envelope = from_slice(&plaintext).map_err(|_| Status::Unauthorized)?;
+    if !envelope.emails.contains(&claims.email) {
         return Err(Status::Unauthorized);
     }
     Ok(Json(envelope))
 }
 
-#[launch]
-fn rocket() -> _ {
-    env::set_var("ROCKET_PORT", env::var("PORT").unwrap_or("8000".into()));
-    let base64_kek = env::var("KEK").unwrap();
+fn cipherly(base64_kek: &str, certs: Certs) -> Rocket<Build> {
     let bytes_kek = BASE64_URL_SAFE_NO_PAD.decode(base64_kek).unwrap();
-    let kek = Key::<Aes256Gcm>::from_slice(&bytes_kek);
-    let cipher = Aes256Gcm::new(kek);
+    let kek = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&bytes_kek));
 
-    let mut builder = rocket::build()
-        .manage(cipher)
-        .mount("/api", routes![encrypt, decrypt])
-        .mount("/", FileServer::from("./static"));
+    rocket::build()
+        .manage(kek)
+        .manage(certs)
+        .mount("/api", routes![seal, unseal])
+        .mount("/", FileServer::from("./static"))
+}
 
-    if env::var("ROCKET_ENV").unwrap_or("unknown".into()) != "test" {
-        let certs = google::fetch().unwrap();
-        builder = builder.manage(certs);
-    }
-
-    builder
+#[launch]
+fn rocket() -> Rocket<Build> {
+    env::set_var("ROCKET_PORT", env::var("PORT").unwrap_or("8000".into()));
+    let kek = env::var("KEK").unwrap();
+    let certs = google::fetch().unwrap();
+    cipherly(&kek, certs)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::rocket;
-    use crate::google::tests::certs;
-    use crate::google::Claims;
+    use super::cipherly;
+    use crate::google::{parse, Claims};
     use jsonwebtoken::{encode, EncodingKey};
     use rocket::http::{Header, Status};
     use rocket::local::blocking::Client;
-    use std::env;
 
     const TEST_KEK: &str = "jRg36ErQ6FLcc7nZgngOpjJnJLGwA3xaMy0yx1pxJrI";
+    const ALICE_ENVELOPE: &str = r#"{"dek":"gVwG8pMMMtdq6mS0OW19Kn7XwvdUcFJpkYN8cEnwnvs","iv":"9XfCog6Jp3MRgD71","emails":["alice@email.com"]}"#;
 
     fn bearer<'h>(email: &str, name: &str) -> Header<'h> {
         let encoding_key =
@@ -127,32 +103,24 @@ mod tests {
         Header::new("Authorization", format!("Bearer {}", token))
     }
 
+    fn client() -> Client {
+        let certs = parse(include_str!("testdata/certs.json")).unwrap();
+        Client::tracked(cipherly(TEST_KEK, certs)).expect("valid rocket instance")
+    }
+
     #[test]
-    fn post_encrypt_succeeds() {
-        env::set_var("KEK", TEST_KEK);
-        env::set_var("ROCKET_ENV", "test");
-        let client = Client::tracked(rocket()).expect("valid rocket instance");
-        let resp = client
-            .post("/api/encrypt")
-            .body(
-                r#"{
-                    "dek":"gVwG8pMMMtdq6mS0OW19Kn7XwvdUcFJpkYN8cEnwnvs",
-                    "iv":"9XfCog6Jp3MRgD71",
-                    "authorized_users":["alice@email.com"]
-                }"#,
-            )
-            .dispatch();
+    fn post_seal_succeeds() {
+        let client = client();
+        let resp = client.post("/api/seal").body(ALICE_ENVELOPE).dispatch();
         assert!(resp.status() == Status::Ok);
         println!("{:?}", resp.into_string());
     }
 
     #[test]
-    fn post_decrypt_alice_succeeds() {
-        env::set_var("KEK", TEST_KEK);
-        env::set_var("ROCKET_ENV", "test");
-        let client = Client::tracked(rocket().manage(certs())).expect("valid rocket instance");
+    fn post_unseal_alice_succeeds() {
+        let client = client();
         let resp = client
-            .post("/api/decrypt")
+            .post("/api/unseal")
             .header(bearer("alice@email.com", "Alice"))
             .body(include_str!("testdata/alice.sealed"))
             .dispatch();
@@ -160,15 +128,39 @@ mod tests {
     }
 
     #[test]
-    fn post_decrypt_eve_fails() {
-        env::set_var("KEK", TEST_KEK);
-        env::set_var("ROCKET_ENV", "test");
-        let client = Client::tracked(rocket().manage(certs())).expect("valid rocket instance");
+    fn post_unseal_eve_fails() {
+        let client = client();
         let resp = client
-            .post("/api/decrypt")
+            .post("/api/unseal")
             .header(bearer("eve@email.com", "Eve"))
             .body(include_str!("testdata/alice.sealed"))
             .dispatch();
         assert!(resp.status() == Status::Unauthorized);
+    }
+
+    #[test]
+    fn post_unseal_no_auth_fails() {
+        let client = client();
+        let resp = client
+            .post("/api/unseal")
+            .body(include_str!("testdata/alice.sealed"))
+            .dispatch();
+        assert!(resp.status() == Status::Unauthorized);
+    }
+
+    #[test]
+    fn seal_and_unseal_succeeds() {
+        let client = client();
+        let seal_resp = client.post("/api/seal").body(ALICE_ENVELOPE).dispatch();
+        assert!(seal_resp.status() == Status::Ok);
+        let body = seal_resp.into_string().unwrap();
+
+        let unseal_resp = client
+            .post("/api/unseal")
+            .header(bearer("alice@email.com", "Alice"))
+            .body(body)
+            .dispatch();
+        assert!(unseal_resp.status() == Status::Ok);
+        assert_eq!(unseal_resp.into_string().unwrap(), ALICE_ENVELOPE);
     }
 }

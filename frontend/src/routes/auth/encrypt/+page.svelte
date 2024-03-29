@@ -7,64 +7,65 @@
   import { Separator } from "$lib/components/ui/separator";
   import { Textarea } from "$lib/components/ui/textarea";
 
-  let plaintext = "";
+  let plainText = "";
   let email = "";
-  let envelope: Promise<string> | null = null;
+  let payload: Promise<string> | null = null;
 
-  async function encrypt(plaintext: string, email: string): Promise<string> {
+  async function encrypt(plainText: string, email: string): Promise<string> {
     const dek = await Cipherly.generateKey();
     const iv = Cipherly.generateIv();
     const cipherText = await Cipherly.encrypt(
-      Cipherly.encodeUtf8(plaintext),
+      Cipherly.encodeUtf8(plainText),
       dek,
       iv
     );
-    const kekEncryptedDek = await Cipherly.kekEncrypt(dek, iv, [email]);
-    return Cipherly.encodeAuthEnvelope({ kekEncryptedDek, cipherText });
+    const sealedEnvelope = await Cipherly.seal({ dek, iv, emails: [email] });
+    return Cipherly.encodeAuthPayload({ sealedEnvelope, cipherText });
   }
 </script>
 
 <h1 class="text-4xl font-extrabold">Authorization Based Encryption</h1>
 
 <div class="mt-4">
-  <Label for="plaintext">Plaintext</Label>
+  <Label for="plainText">Plaintext</Label>
   <Textarea
-    id="plaintext"
-    bind:value={plaintext}
+    id="plainText"
+    bind:value={plainText}
     placeholder="The plaintext secret to encrypt"
   />
 </div>
 
 <div class="mt-4">
-  <Label for="plaintext">Authorized Email</Label>
+  <Label for="emails">Authorized Emails</Label>
   <div class="flex space-x-2">
     <Input
+      id="emails"
       type="text"
-      placeholder="Email of the user authorized to decrypt the secret"
+      placeholder="Emails of the users authorized to decrypt the secret"
       bind:value={email}
     />
     <Button
       type="button"
-      on:click={() => (envelope = encrypt(plaintext, email))}
+      on:click={() => (payload = encrypt(plainText, email))}
     >
       Encrypt
     </Button>
   </div>
 </div>
 
-{#if envelope}
+{#if payload}
   <Separator class="mt-8 mb-8" />
-  {#await envelope}
+  {#await payload}
     <div class="mt-8">Encrypting...</div>
-  {:then envelope}
-    {@const url = Cipherly.authUrl() + envelope}
-    <Label for="envelope">Ciphertext Envelope</Label>
-    <div id="envelope" class="p-3 mb-2 border rounded-md font-mono">
-      <a href={url}>{envelope}</a>
+  {:then payload}
+    {@const url = Cipherly.authUrl() + payload}
+    <Label for="payload">Ciphertext Payload</Label>
+    <div id="payload" class="p-3 mb-2 border rounded-md font-mono">
+      <a href={url}>{payload}</a>
     </div>
     <Button
       type="button"
-      on:click={() => navigator.clipboard.writeText(envelope)}
+      on:click={() => navigator.clipboard.writeText(payload)}
     >
       Copy Ciphertext
     </Button>

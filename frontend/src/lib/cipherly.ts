@@ -44,18 +44,18 @@ export function generateIv(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(12));
 }
 
-type PasswordEnvelope = {
+type PasswordPayload = {
   salt: Uint8Array;
   iv: Uint8Array;
-  ciphertext: Uint8Array;
+  cipherText: Uint8Array;
 };
 
-export function encodePasswordEnvelope(envelope: PasswordEnvelope): string {
-  return encodeMessagePack(envelope);
+export function encodePasswordPayload(payload: PasswordPayload): string {
+  return encodeMessagePack(payload);
 }
 
-export function decodePasswordEnvelope(hash: string): PasswordEnvelope {
-  return decodeMessagePack(hash) as PasswordEnvelope;
+export function decodePasswordPayload(hash: string): PasswordPayload {
+  return decodeMessagePack(hash) as PasswordPayload;
 }
 
 export function passwordUrl(): string {
@@ -108,64 +108,61 @@ export async function decrypt(
   );
 }
 
-type AuthEnvelope = {
-  kekEncryptedDek: Uint8Array;
+type AuthPayload = {
+  sealedEnvelope: Uint8Array;
   cipherText: Uint8Array;
 };
 
-export function encodeAuthEnvelope(envelope: AuthEnvelope): string {
-  return encodeMessagePack(envelope);
+export function encodeAuthPayload(payload: AuthPayload): string {
+  return encodeMessagePack(payload);
 }
 
-export function decodeAuthEnvelope(hash: string): AuthEnvelope {
-  return decodeMessagePack(hash) as AuthEnvelope;
+export function decodeAuthPayload(hash: string): AuthPayload {
+  return decodeMessagePack(hash) as AuthPayload;
 }
 
 export function authUrl(): string {
   return `${location.protocol}//${location.host}/auth/#`;
 }
 
-export async function kekEncrypt(
-  dek: CryptoKey,
-  iv: Uint8Array,
-  emails: string[],
-): Promise<Uint8Array> {
-  const encodedDek = await crypto.subtle.exportKey("raw", dek);
-  const response = await fetch("/api/encrypt", {
+type Envelope = {
+  dek: CryptoKey;
+  iv: Uint8Array;
+  emails: string[];
+};
+
+export async function seal(envelope: Envelope): Promise<Uint8Array> {
+  const encodedDek = await crypto.subtle.exportKey("raw", envelope.dek);
+  const response = await fetch("/api/seal", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       dek: encodeBase64(new Uint8Array(encodedDek)),
-      iv: encodeBase64(iv),
-      authorized_users: emails,
+      iv: encodeBase64(envelope.iv),
+      emails: envelope.emails,
     }),
   });
   if (!response.ok) {
     throw { code: response.status, message: response.statusText };
   }
   const result = await response.json();
-  return decodeBase64(result.header);
+  return decodeBase64(result.data);
 }
 
-type AuthHeader = {
-  dek: CryptoKey;
-  iv: Uint8Array;
-};
-
-export async function kekDecrypt(
-  header: Uint8Array,
+export async function unseal(
+  data: Uint8Array,
   token: string,
-): Promise<AuthHeader> {
-  const response = await fetch("/api/decrypt", {
+): Promise<Envelope> {
+  const response = await fetch("/api/unseal", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: "Bearer " + token,
     },
     body: JSON.stringify({
-      header: encodeBase64(header),
+      data: encodeBase64(data),
     }),
   });
   if (!response.ok) {
@@ -180,5 +177,5 @@ export async function kekDecrypt(
     ["encrypt", "decrypt"],
   );
 
-  return { dek, iv: decodeBase64(result.iv) };
+  return { dek, iv: decodeBase64(result.iv), emails: result.emails };
 }

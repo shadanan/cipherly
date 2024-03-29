@@ -32,7 +32,7 @@ impl Certs {
     }
 }
 
-fn parse(json: &str) -> Result<Certs, Box<dyn Error>> {
+pub fn parse(json: &str) -> Result<Certs, Box<dyn Error>> {
     let certs: Certs = serde_json::from_str(json)?;
     Ok(certs)
 }
@@ -96,18 +96,18 @@ impl<'r> FromRequest<'r> for Claims {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use crate::google::Certs;
     use crate::google::{fetch, parse};
+
+    fn certs() -> Certs {
+        parse(include_str!("testdata/certs.json")).unwrap()
+    }
 
     #[test]
     fn fetch_succeeds() {
         let result = fetch();
         assert!(result.is_ok());
-    }
-
-    pub fn certs() -> Certs {
-        parse(include_str!("testdata/certs.json")).unwrap()
     }
 
     #[test]

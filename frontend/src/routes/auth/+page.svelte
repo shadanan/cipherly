@@ -7,37 +7,37 @@
   import { Separator } from "$lib/components/ui/separator";
   import { Textarea } from "$lib/components/ui/textarea";
 
-  let envelope = "";
-  let plaintext: Promise<string> | null = null;
+  let payload = "";
+  let plainText: Promise<string> | null = null;
 
   if (location.hash) {
-    envelope = location.hash.slice(1);
+    payload = location.hash.slice(1);
   }
 
-  async function decrypt(encodedEnvelope: string): Promise<string> {
+  async function decrypt(payload: string): Promise<string> {
     if ($token === null) {
       logout();
       throw new Error("Cannot decrypt without logging in.");
     }
-    const envelope = Cipherly.decodeAuthEnvelope(encodedEnvelope);
-    const header = await Cipherly.kekDecrypt(envelope.kekEncryptedDek, $token);
-    const plaintext = await Cipherly.decrypt(
-      envelope.cipherText,
-      header.dek,
-      header.iv
+    const { sealedEnvelope, cipherText } = Cipherly.decodeAuthPayload(payload);
+    const envelope = await Cipherly.unseal(sealedEnvelope, $token);
+    const plainText = await Cipherly.decrypt(
+      cipherText,
+      envelope.dek,
+      envelope.iv
     );
-    return Cipherly.decodeUtf8(plaintext);
+    return Cipherly.decodeUtf8(plainText);
   }
 </script>
 
 <h1 class="text-4xl font-extrabold">Authorization Based Decryption</h1>
 
 <div class="mt-4">
-  <Label for="envelope">Ciphertext Envelope</Label>
+  <Label for="payload">Ciphertext Payload</Label>
   <Textarea
-    id="envelope"
-    bind:value={envelope}
-    placeholder="The ciphertext envelope to be decrypted"
+    id="payload"
+    bind:value={payload}
+    placeholder="The ciphertext payload to be decrypted"
   />
 </div>
 
@@ -47,24 +47,24 @@
   </div>
 {:else}
   <div class="mt-4">
-    <Button type="button" on:click={() => (plaintext = decrypt(envelope))}>
+    <Button type="button" on:click={() => (plainText = decrypt(payload))}>
       Decrypt
     </Button>
   </div>
 {/if}
 
-{#if plaintext}
+{#if plainText}
   <Separator class="mt-8 mb-8" />
-  {#await plaintext}
+  {#await plainText}
     <div class="mt-8">Decrypting...</div>
-  {:then plaintext}
-    <Label for="plaintext">Decrypted Plaintext</Label>
-    <div id="plaintext" class="p-3 mb-2 border rounded-md font-mono">
-      {plaintext}
+  {:then plainText}
+    <Label for="plainText">Decrypted Plaintext</Label>
+    <div id="plainText" class="p-3 mb-2 border rounded-md font-mono">
+      {plainText}
     </div>
     <Button
       type="button"
-      on:click={() => navigator.clipboard.writeText(plaintext)}
+      on:click={() => navigator.clipboard.writeText(plainText)}
     >
       Copy Plaintext
     </Button>
