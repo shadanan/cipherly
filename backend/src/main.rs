@@ -1,13 +1,11 @@
-#[macro_use]
-extern crate rocket;
-
 use aes_gcm::{
     aead::{Aead, KeyInit, OsRng},
     AeadCore, Aes256Gcm, Key,
 };
 use base64::prelude::*;
+use google::Certs;
 use rmp_serde::Serializer;
-use rocket::{fs::FileServer, State};
+use rocket::{fs::FileServer, launch, post, routes, Build, Rocket, State};
 use rocket::{http::Status, serde::json::Json};
 use serde::{Deserialize, Serialize};
 use std::env;
@@ -80,36 +78,32 @@ fn decrypt(
     Ok(Json(envelope))
 }
 
-#[launch]
-fn rocket() -> _ {
-    env::set_var("ROCKET_PORT", env::var("PORT").unwrap_or("8000".into()));
-    let base64_kek = env::var("KEK").unwrap();
+fn cipherly(base64_kek: &str, certs: Certs) -> Rocket<Build> {
     let bytes_kek = BASE64_URL_SAFE_NO_PAD.decode(base64_kek).unwrap();
-    let kek = Key::<Aes256Gcm>::from_slice(&bytes_kek);
-    let cipher = Aes256Gcm::new(kek);
+    let kek = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&bytes_kek));
 
-    let mut builder = rocket::build()
-        .manage(cipher)
+    rocket::build()
+        .manage(kek)
+        .manage(certs)
         .mount("/api", routes![encrypt, decrypt])
-        .mount("/", FileServer::from("./static"));
+        .mount("/", FileServer::from("./static"))
+}
 
-    if env::var("ROCKET_ENV").unwrap_or("unknown".into()) != "test" {
-        let certs = google::fetch().unwrap();
-        builder = builder.manage(certs);
-    }
-
-    builder
+#[launch]
+fn rocket() -> Rocket<Build> {
+    env::set_var("ROCKET_PORT", env::var("PORT").unwrap_or("8000".into()));
+    let kek = env::var("KEK").unwrap();
+    let certs = google::fetch().unwrap();
+    cipherly(&kek, certs)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::rocket;
-    use crate::google::tests::certs;
-    use crate::google::Claims;
+    use super::cipherly;
+    use crate::google::{parse, Claims};
     use jsonwebtoken::{encode, EncodingKey};
     use rocket::http::{Header, Status};
     use rocket::local::blocking::Client;
-    use std::env;
 
     const TEST_KEK: &str = "jRg36ErQ6FLcc7nZgngOpjJnJLGwA3xaMy0yx1pxJrI";
 
@@ -127,11 +121,14 @@ mod tests {
         Header::new("Authorization", format!("Bearer {}", token))
     }
 
+    fn client() -> Client {
+        let certs = parse(include_str!("testdata/certs.json")).unwrap();
+        Client::tracked(cipherly(TEST_KEK, certs)).expect("valid rocket instance")
+    }
+
     #[test]
     fn post_encrypt_succeeds() {
-        env::set_var("KEK", TEST_KEK);
-        env::set_var("ROCKET_ENV", "test");
-        let client = Client::tracked(rocket()).expect("valid rocket instance");
+        let client = client();
         let resp = client
             .post("/api/encrypt")
             .body(
@@ -148,9 +145,7 @@ mod tests {
 
     #[test]
     fn post_decrypt_alice_succeeds() {
-        env::set_var("KEK", TEST_KEK);
-        env::set_var("ROCKET_ENV", "test");
-        let client = Client::tracked(rocket().manage(certs())).expect("valid rocket instance");
+        let client = client();
         let resp = client
             .post("/api/decrypt")
             .header(bearer("alice@email.com", "Alice"))
@@ -161,9 +156,7 @@ mod tests {
 
     #[test]
     fn post_decrypt_eve_fails() {
-        env::set_var("KEK", TEST_KEK);
-        env::set_var("ROCKET_ENV", "test");
-        let client = Client::tracked(rocket().manage(certs())).expect("valid rocket instance");
+        let client = client();
         let resp = client
             .post("/api/decrypt")
             .header(bearer("eve@email.com", "Eve"))
