@@ -1,11 +1,5 @@
 <script lang="ts">
   import * as Cipherly from "$lib/cipherly";
-  import * as Alert from "$lib/components/ui/alert";
-  import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
-  import { Label } from "$lib/components/ui/label";
-  import { Separator } from "$lib/components/ui/separator";
-  import { Textarea } from "$lib/components/ui/textarea";
 
   let plainText = "";
   let password = "";
@@ -26,60 +20,71 @@
   }
 </script>
 
-<h1 class="text-4xl font-extrabold">Password Based Encryption</h1>
+<h1 class="h1">Password Based Encryption</h1>
 
 <div class="mt-4">
-  <Label for="plainText">Plaintext</Label>
-  <Textarea
+  <label class="label" for="plainText">Plaintext</label>
+  <textarea
     id="plainText"
+    class="textarea"
     bind:value={plainText}
     placeholder="The plaintext secret to encrypt"
   />
 </div>
 
 <div class="mt-4">
-  <Label for="password">Password</Label>
+  <label class="label" for="password">Password</label>
   <div class="flex space-x-2">
-    <Input
+    <input
       id="password"
       type="password"
+      class="input"
       placeholder="The password to use for encryption"
       bind:value={password}
     />
-    <Button
+    <button
       type="button"
+      class="btn variant-filled"
       on:click={() => (payload = encrypt(plainText, password))}
     >
       Encrypt
-    </Button>
+    </button>
   </div>
 </div>
 
 {#if payload}
-  <Separator class="mt-8 mb-8" />
+  <hr class="mt-8 mb-8" />
   {#await payload}
     <div class="mt-8">Encrypting...</div>
   {:then payload}
     {@const url = Cipherly.passwordUrl() + payload}
-    <Label for="payload">Ciphertext Payload</Label>
-    <div id="payload" class="p-3 mb-2 border rounded-md font-mono">
-      <a href={url}>{payload}</a>
-    </div>
-    <Button
+    <label class="label" for="plainText">Ciphertext Payload</label>
+    <aside class="alert variant-ghost mb-2">
+      <div class="alert-message">
+        <a href={url}>{payload}</a>
+      </div>
+    </aside>
+
+    <button
       type="button"
+      class="btn variant-filled"
       on:click={() => navigator.clipboard.writeText(payload)}
     >
       Copy Ciphertext
-    </Button>
-    <Button type="button" on:click={() => navigator.clipboard.writeText(url)}>
+    </button>
+    <button
+      type="button"
+      class="btn variant-filled"
+      on:click={() => navigator.clipboard.writeText(url)}
+    >
       Copy Decrypt URL
-    </Button>
+    </button>
   {:catch error}
-    <Alert.Root variant="destructive">
-      <Alert.Title>Failed to Encrypt</Alert.Title>
-      <Alert.Description>
-        {error.message}
-      </Alert.Description>
-    </Alert.Root>
+    <aside class="alert variant-ghost-error">
+      <div class="alert-message">
+        <h3 class="h3">Failed to Encrypt</h3>
+        <p>{error.message}</p>
+      </div>
+    </aside>
   {/await}
 {/if}

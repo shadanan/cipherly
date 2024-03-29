@@ -1,4 +1,4 @@
-<h1 class="text-4xl font-extrabold">Cipherly</h1>
+<h1 class="h1">Cipherly</h1>
 <p class="text-lg mt-4">
   Welcome to Cipherly, a simple password based encryption and decryption tool.
 </p>

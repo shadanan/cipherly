@@ -5,12 +5,12 @@
 </script>
 
 <DropdownMenu.Root>
-  <DropdownMenu.Trigger
-    ><Avatar.Root>
+  <DropdownMenu.Trigger>
+    <Avatar.Root>
       <Avatar.Image src={$claims?.picture} />
-      <Avatar.Fallback>LY</Avatar.Fallback>
-    </Avatar.Root></DropdownMenu.Trigger
-  >
+      <Avatar.Fallback>?</Avatar.Fallback>
+    </Avatar.Root>
+  </DropdownMenu.Trigger>
   <DropdownMenu.Content>
     <DropdownMenu.Group>
       {#if $claims === null}

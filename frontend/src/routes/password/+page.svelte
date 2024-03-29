@@ -1,11 +1,5 @@
 <script lang="ts">
   import * as Cipherly from "$lib/cipherly";
-  import * as Alert from "$lib/components/ui/alert";
-  import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
-  import { Label } from "$lib/components/ui/label";
-  import { Separator } from "$lib/components/ui/separator";
-  import { Textarea } from "$lib/components/ui/textarea";
 
   let payload = "";
   let password = "";
@@ -23,55 +17,61 @@
   }
 </script>
 
-<h1 class="text-4xl font-extrabold">Password Based Decryption</h1>
+<h1 class="h1">Password Based Decryption</h1>
 
 <div class="mt-4">
-  <Label for="payload">Ciphertext Payload</Label>
-  <Textarea
+  <label class="label" for="payload">Ciphertext Payload</label>
+  <textarea
     id="payload"
+    class="textarea"
     bind:value={payload}
     placeholder="The ciphertext payload to be decrypted"
   />
 </div>
 
 <div class="mt-4">
-  <Label for="password">Password</Label>
+  <label class="label" for="password">Password</label>
   <div class="flex space-x-2">
-    <Input
+    <input
+      class="input"
       type="password"
       placeholder="The password to use for decryption"
       bind:value={password}
     />
-    <Button
+    <button
       type="button"
+      class="btn variant-filled"
       on:click={() => (plainText = decrypt(payload, password))}
     >
       Decrypt
-    </Button>
+    </button>
   </div>
 </div>
 
 {#if plainText}
-  <Separator class="mt-8 mb-8" />
+  <hr class="mt-8 mb-8" />
   {#await plainText}
     <div class="mt-8">Decrypting...</div>
   {:then plainText}
-    <Label for="plainText">Decrypted Plaintext</Label>
-    <div id="plainText" class="p-3 mb-2 border rounded-md font-mono">
-      {plainText}
-    </div>
-    <Button
+    <label class="label" for="plainText">Decrypted Plaintext</label>
+    <aside class="alert variant-ghost mb-2">
+      <div class="alert-message">
+        <p id="plainText">{plainText}</p>
+      </div>
+    </aside>
+    <button
       type="button"
+      class="btn variant-filled"
       on:click={() => navigator.clipboard.writeText(plainText)}
     >
       Copy Plaintext
-    </Button>
+    </button>
   {:catch}
-    <Alert.Root variant="destructive">
-      <Alert.Title>Failed to Decrypt</Alert.Title>
-      <Alert.Description>
-        Password is incorrect or ciphertext is invalid.
-      </Alert.Description>
-    </Alert.Root>
+    <aside class="alert variant-ghost-error">
+      <div class="alert-message">
+        <h3 class="h3">Failed to Decrypt</h3>
+        <p>Password is incorrect or ciphertext is invalid.</p>
+      </div>
+    </aside>
   {/await}
 {/if}
