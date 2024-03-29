@@ -16,13 +16,13 @@
     const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
 
     const iv = Cipherly.generateIv();
-    const ciphertext = await Cipherly.encrypt(
+    const cipherText = await Cipherly.encrypt(
       Cipherly.encodeUtf8(plainText),
       key,
       iv
     );
 
-    return Cipherly.encodePasswordPayload({ salt, iv, cipherText: ciphertext });
+    return Cipherly.encodePasswordPayload({ salt, iv, cipherText });
   }
 </script>
 
