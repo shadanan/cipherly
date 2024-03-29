@@ -7,18 +7,18 @@ use serde::{Deserialize, Serialize};
 use std::error::Error;
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-pub struct Key {
-    pub kid: String,
-    pub alg: String,
-    pub n: String,
-    pub e: String,
-    pub kty: String,
-    pub r#use: String,
+struct Key {
+    kid: String,
+    alg: String,
+    n: String,
+    e: String,
+    kty: String,
+    r#use: String,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct Certs {
-    pub keys: Vec<Key>,
+    keys: Vec<Key>,
 }
 
 impl Certs {
@@ -32,7 +32,7 @@ impl Certs {
     }
 }
 
-pub fn parse(json: &str) -> Result<Certs, Box<dyn Error>> {
+fn parse(json: &str) -> Result<Certs, Box<dyn Error>> {
     let certs: Certs = serde_json::from_str(json)?;
     Ok(certs)
 }
