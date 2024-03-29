@@ -96,7 +96,7 @@ impl<'r> FromRequest<'r> for Claims {
 }
 
 #[cfg(test)]
-pub mod tests {
+mod tests {
     use crate::google::Certs;
     use crate::google::{fetch, parse};
 
