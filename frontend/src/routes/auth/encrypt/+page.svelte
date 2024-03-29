@@ -77,7 +77,6 @@
       <Alert.Title>Failed to Encrypt</Alert.Title>
       <Alert.Description>
         {error.message}
-        {(console.log({ error }), "")}
       </Alert.Description>
     </Alert.Root>
   {/await}
