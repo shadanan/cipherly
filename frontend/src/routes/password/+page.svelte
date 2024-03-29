@@ -7,18 +7,18 @@
   import { Separator } from "$lib/components/ui/separator";
   import { Textarea } from "$lib/components/ui/textarea";
 
-  let envelope = "";
+  let payload = "";
   let password = "";
   let plaintext: Promise<string> | null = null;
 
   if (location.hash) {
-    envelope = location.hash.slice(1);
+    payload = location.hash.slice(1);
   }
 
-  async function decrypt(envelope: string, password: string): Promise<string> {
-    const { salt, iv, ciphertext } = Cipherly.decodePasswordEnvelope(envelope);
+  async function decrypt(payload: string, password: string): Promise<string> {
+    const { salt, iv, cipherText } = Cipherly.decodePasswordPayload(payload);
     const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
-    const secret = await Cipherly.decrypt(ciphertext, key, iv);
+    const secret = await Cipherly.decrypt(cipherText, key, iv);
     return Cipherly.decodeUtf8(secret);
   }
 </script>
@@ -26,11 +26,11 @@
 <h1 class="text-4xl font-extrabold">Password Based Decryption</h1>
 
 <div class="mt-4">
-  <Label for="envelope">Ciphertext Envelope</Label>
+  <Label for="payload">Ciphertext Payload</Label>
   <Textarea
-    id="envelope"
-    bind:value={envelope}
-    placeholder="The ciphertext envelope to be decrypted"
+    id="payload"
+    bind:value={payload}
+    placeholder="The ciphertext payload to be decrypted"
   />
 </div>
 
@@ -44,7 +44,7 @@
     />
     <Button
       type="button"
-      on:click={() => (plaintext = decrypt(envelope, password))}
+      on:click={() => (plaintext = decrypt(payload, password))}
     >
       Decrypt
     </Button>

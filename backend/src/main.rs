@@ -16,19 +16,16 @@ mod google;
 struct Envelope {
     dek: String,
     iv: String,
-    authorized_users: Vec<String>,
+    emails: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct EncryptedEnvelope {
+struct SealedEnvelope {
     data: String,
 }
 
-#[post("/encrypt", data = "<envelope>")]
-fn encrypt(
-    envelope: Json<Envelope>,
-    kek: &State<Aes256Gcm>,
-) -> Result<Json<EncryptedEnvelope>, Status> {
+#[post("/seal", data = "<envelope>")]
+fn seal(envelope: Json<Envelope>, kek: &State<Aes256Gcm>) -> Result<Json<SealedEnvelope>, Status> {
     let buf = to_vec::<Envelope>(&envelope).map_err(|_| Status::InternalServerError)?;
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
     let ciphertext = kek
@@ -36,19 +33,19 @@ fn encrypt(
         .map_err(|_| Status::InternalServerError)?;
     let data =
         to_vec(&(nonce.to_vec(), ciphertext.to_vec())).map_err(|_| Status::InternalServerError)?;
-    Ok(Json(EncryptedEnvelope {
+    Ok(Json(SealedEnvelope {
         data: BASE64_URL_SAFE_NO_PAD.encode(&data),
     }))
 }
 
-#[post("/decrypt", data = "<encrypted_envelope>")]
-fn decrypt(
-    encrypted_envelope: Json<EncryptedEnvelope>,
+#[post("/unseal", data = "<sealed_envelope>")]
+fn unseal(
+    sealed_envelope: Json<SealedEnvelope>,
     kek: &State<Aes256Gcm>,
     claims: google::Claims,
 ) -> Result<Json<Envelope>, Status> {
     let data = BASE64_URL_SAFE_NO_PAD
-        .decode(&encrypted_envelope.data)
+        .decode(&sealed_envelope.data)
         .map_err(|_| Status::Unauthorized)?;
     let (nonce, ciphertext): (Vec<u8>, Vec<u8>) =
         from_slice(&data).map_err(|_| Status::Unauthorized)?;
@@ -56,7 +53,7 @@ fn decrypt(
         .decrypt(nonce.as_slice().into(), ciphertext.as_slice())
         .map_err(|_| Status::Unauthorized)?;
     let envelope: Envelope = from_slice(&plaintext).map_err(|_| Status::Unauthorized)?;
-    if !envelope.authorized_users.contains(&claims.email) {
+    if !envelope.emails.contains(&claims.email) {
         return Err(Status::Unauthorized);
     }
     Ok(Json(envelope))
@@ -69,7 +66,7 @@ fn cipherly(base64_kek: &str, certs: Certs) -> Rocket<Build> {
     rocket::build()
         .manage(kek)
         .manage(certs)
-        .mount("/api", routes![encrypt, decrypt])
+        .mount("/api", routes![seal, unseal])
         .mount("/", FileServer::from("./static"))
 }
 
@@ -90,6 +87,7 @@ mod tests {
     use rocket::local::blocking::Client;
 
     const TEST_KEK: &str = "jRg36ErQ6FLcc7nZgngOpjJnJLGwA3xaMy0yx1pxJrI";
+    const ALICE_ENVELOPE: &str = r#"{"dek":"gVwG8pMMMtdq6mS0OW19Kn7XwvdUcFJpkYN8cEnwnvs","iv":"9XfCog6Jp3MRgD71","emails":["alice@email.com"]}"#;
 
     fn bearer<'h>(email: &str, name: &str) -> Header<'h> {
         let encoding_key =
@@ -111,27 +109,18 @@ mod tests {
     }
 
     #[test]
-    fn post_encrypt_succeeds() {
+    fn post_seal_succeeds() {
         let client = client();
-        let resp = client
-            .post("/api/encrypt")
-            .body(
-                r#"{
-                    "dek":"gVwG8pMMMtdq6mS0OW19Kn7XwvdUcFJpkYN8cEnwnvs",
-                    "iv":"9XfCog6Jp3MRgD71",
-                    "authorized_users":["alice@email.com"]
-                }"#,
-            )
-            .dispatch();
+        let resp = client.post("/api/seal").body(ALICE_ENVELOPE).dispatch();
         assert!(resp.status() == Status::Ok);
         println!("{:?}", resp.into_string());
     }
 
     #[test]
-    fn post_decrypt_alice_succeeds() {
+    fn post_unseal_alice_succeeds() {
         let client = client();
         let resp = client
-            .post("/api/decrypt")
+            .post("/api/unseal")
             .header(bearer("alice@email.com", "Alice"))
             .body(include_str!("testdata/alice.sealed"))
             .dispatch();
@@ -139,13 +128,39 @@ mod tests {
     }
 
     #[test]
-    fn post_decrypt_eve_fails() {
+    fn post_unseal_eve_fails() {
         let client = client();
         let resp = client
-            .post("/api/decrypt")
+            .post("/api/unseal")
             .header(bearer("eve@email.com", "Eve"))
             .body(include_str!("testdata/alice.sealed"))
             .dispatch();
         assert!(resp.status() == Status::Unauthorized);
+    }
+
+    #[test]
+    fn post_unseal_no_auth_fails() {
+        let client = client();
+        let resp = client
+            .post("/api/unseal")
+            .body(include_str!("testdata/alice.sealed"))
+            .dispatch();
+        assert!(resp.status() == Status::Unauthorized);
+    }
+
+    #[test]
+    fn seal_and_unseal_succeeds() {
+        let client = client();
+        let seal_resp = client.post("/api/seal").body(ALICE_ENVELOPE).dispatch();
+        assert!(seal_resp.status() == Status::Ok);
+        let body = seal_resp.into_string().unwrap();
+
+        let unseal_resp = client
+            .post("/api/unseal")
+            .header(bearer("alice@email.com", "Alice"))
+            .body(body)
+            .dispatch();
+        assert!(unseal_resp.status() == Status::Ok);
+        assert_eq!(unseal_resp.into_string().unwrap(), ALICE_ENVELOPE);
     }
 }

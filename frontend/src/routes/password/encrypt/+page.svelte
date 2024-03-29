@@ -9,7 +9,7 @@
 
   let plaintext = "";
   let password = "";
-  let envelope: Promise<string> | null = null;
+  let payload: Promise<string> | null = null;
 
   async function encrypt(plaintext: string, password: string): Promise<string> {
     const salt = Cipherly.generateSalt();
@@ -22,7 +22,7 @@
       iv
     );
 
-    return Cipherly.encodePasswordEnvelope({ salt, iv, ciphertext });
+    return Cipherly.encodePasswordPayload({ salt, iv, cipherText: ciphertext });
   }
 </script>
 
@@ -47,20 +47,20 @@
     />
     <Button
       type="button"
-      on:click={() => (envelope = encrypt(plaintext, password))}
+      on:click={() => (payload = encrypt(plaintext, password))}
     >
       Encrypt
     </Button>
   </div>
 </div>
 
-{#if envelope}
+{#if payload}
   <Separator class="mt-8 mb-8" />
-  {#await envelope}
+  {#await payload}
     <div class="mt-8">Encrypting...</div>
   {:then envelope}
     {@const url = Cipherly.passwordUrl() + envelope}
-    <Label for="envelope">Ciphertext Envelope</Label>
+    <Label for="envelope">Ciphertext Payload</Label>
     <div id="envelope" class="p-3 mb-2 border rounded-md font-mono">
       <a href={url}>{envelope}</a>
     </div>
