@@ -8,25 +8,23 @@
   import { Textarea } from "$lib/components/ui/textarea";
 
   let plaintext = "";
-  let password = "";
+  let email = "";
   let envelope: Promise<string> | null = null;
 
-  async function encrypt(plaintext: string, password: string): Promise<string> {
-    const salt = Cipherly.generateSalt();
-    const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
-
+  async function encrypt(plaintext: string, email: string): Promise<string> {
+    const dek = await Cipherly.generateKey();
     const iv = Cipherly.generateIv();
-    const ciphertext = await Cipherly.encrypt(
+    const cipherText = await Cipherly.encrypt(
       Cipherly.encodeUtf8(plaintext),
-      key,
+      dek,
       iv
     );
-
-    return Cipherly.encodePasswordEnvelope({ salt, iv, ciphertext });
+    const kekEncryptedDek = await Cipherly.kekEncrypt(dek, iv, [email]);
+    return Cipherly.encodeAuthEnvelope({ kekEncryptedDek, cipherText });
   }
 </script>
 
-<h1 class="text-4xl font-extrabold">Password Based Encryption</h1>
+<h1 class="text-4xl font-extrabold">Authorization Based Encryption</h1>
 
 <div class="mt-4">
   <Label for="plaintext">Plaintext</Label>
@@ -38,16 +36,16 @@
 </div>
 
 <div class="mt-4">
-  <Label for="plaintext">Password</Label>
+  <Label for="plaintext">Authorized Email</Label>
   <div class="flex space-x-2">
     <Input
-      type="password"
-      placeholder="The password to use for encryption"
-      bind:value={password}
+      type="text"
+      placeholder="Email of the user authorized to decrypt the secret"
+      bind:value={email}
     />
     <Button
       type="button"
-      on:click={() => (envelope = encrypt(plaintext, password))}
+      on:click={() => (envelope = encrypt(plaintext, email))}
     >
       Encrypt
     </Button>
@@ -59,7 +57,7 @@
   {#await envelope}
     <div class="mt-8">Encrypting...</div>
   {:then envelope}
-    {@const url = Cipherly.passwordUrl() + envelope}
+    {@const url = Cipherly.authUrl() + envelope}
     <Label for="envelope">Ciphertext Envelope</Label>
     <div id="envelope" class="p-3 mb-2 border rounded-md font-mono">
       <a href={url}>{envelope}</a>
