@@ -155,7 +155,7 @@ type AuthHeader = {
 };
 
 export async function kekDecrypt(
-  header: Uint8Array,
+  data: Uint8Array,
   token: string,
 ): Promise<AuthHeader> {
   const response = await fetch("/api/decrypt", {
@@ -165,7 +165,7 @@ export async function kekDecrypt(
       Authorization: "Bearer " + token,
     },
     body: JSON.stringify({
-      header: encodeBase64(header),
+      data: encodeBase64(data),
     }),
   });
   if (!response.ok) {

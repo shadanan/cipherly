@@ -4,7 +4,7 @@ use aes_gcm::{
 };
 use base64::prelude::*;
 use google::Certs;
-use rmp_serde::Serializer;
+use rmp_serde::{from_slice, to_vec};
 use rocket::{fs::FileServer, launch, post, routes, Build, Rocket, State};
 use rocket::{http::Status, serde::json::Json};
 use serde::{Deserialize, Serialize};
@@ -21,57 +21,41 @@ struct Envelope {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct EncryptedEnvelope {
-    nonce: Vec<u8>,
-    ciphertext: Vec<u8>,
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-struct EncodedEnvelope {
-    header: String,
+    data: String,
 }
 
 #[post("/encrypt", data = "<envelope>")]
 fn encrypt(
     envelope: Json<Envelope>,
     kek: &State<Aes256Gcm>,
-) -> Result<Json<EncodedEnvelope>, Status> {
-    let mut buf = Vec::new();
-    envelope
-        .serialize(&mut Serializer::new(&mut buf))
-        .map_err(|_| Status::InternalServerError)?;
+) -> Result<Json<EncryptedEnvelope>, Status> {
+    let buf = to_vec::<Envelope>(&envelope).map_err(|_| Status::InternalServerError)?;
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
     let ciphertext = kek
         .encrypt(&nonce, buf.as_slice())
         .map_err(|_| Status::InternalServerError)?;
-
-    let mut header = Vec::new();
-    let ee = EncryptedEnvelope {
-        nonce: nonce.to_vec(),
-        ciphertext: ciphertext.to_vec(),
-    };
-    ee.serialize(&mut Serializer::new(&mut header))
-        .map_err(|_| Status::InternalServerError)?;
-    let encoded_header = BASE64_URL_SAFE_NO_PAD.encode(&header);
-    Ok(Json(EncodedEnvelope {
-        header: encoded_header,
+    let data =
+        to_vec(&(nonce.to_vec(), ciphertext.to_vec())).map_err(|_| Status::InternalServerError)?;
+    Ok(Json(EncryptedEnvelope {
+        data: BASE64_URL_SAFE_NO_PAD.encode(&data),
     }))
 }
 
-#[post("/decrypt", data = "<encoded_envelope>")]
+#[post("/decrypt", data = "<encrypted_envelope>")]
 fn decrypt(
-    encoded_envelope: Json<EncodedEnvelope>,
+    encrypted_envelope: Json<EncryptedEnvelope>,
     kek: &State<Aes256Gcm>,
     claims: google::Claims,
 ) -> Result<Json<Envelope>, Status> {
-    println!("{:?}", encoded_envelope.header);
-    let header = BASE64_URL_SAFE_NO_PAD
-        .decode(&encoded_envelope.header)
+    let data = BASE64_URL_SAFE_NO_PAD
+        .decode(&encrypted_envelope.data)
         .map_err(|_| Status::Unauthorized)?;
-    let ee: EncryptedEnvelope = rmp_serde::from_slice(&header).map_err(|_| Status::Unauthorized)?;
+    let (nonce, ciphertext): (Vec<u8>, Vec<u8>) =
+        from_slice(&data).map_err(|_| Status::Unauthorized)?;
     let plaintext = kek
-        .decrypt(ee.nonce.as_slice().into(), ee.ciphertext.as_slice())
+        .decrypt(nonce.as_slice().into(), ciphertext.as_slice())
         .map_err(|_| Status::Unauthorized)?;
-    let envelope: Envelope = rmp_serde::from_slice(&plaintext).map_err(|_| Status::Unauthorized)?;
+    let envelope: Envelope = from_slice(&plaintext).map_err(|_| Status::Unauthorized)?;
     if !envelope.authorized_users.contains(&claims.email) {
         return Err(Status::Unauthorized);
     }
