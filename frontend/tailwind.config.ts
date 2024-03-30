@@ -1,11 +1,19 @@
 import { skeleton } from "@skeletonlabs/tw-plugin";
 import forms from "@tailwindcss/forms";
+import typography from "@tailwindcss/typography";
+import { join } from "path";
+import type { Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
 
-/** @type {import('tailwindcss').Config} */
-const config = {
-  content: ["./src/**/*.{html,js,svelte,ts}"],
-
+export default {
+  darkMode: ["class"],
+  content: [
+    "./src/**/*.{html,js,svelte,ts}",
+    join(
+      require.resolve("@skeletonlabs/skeleton"),
+      "../**/*.{html,js,svelte,ts}",
+    ),
+  ],
   theme: {
     extend: {
       colors: {
@@ -56,13 +64,16 @@ const config = {
 
   plugins: [
     forms,
+    typography,
     skeleton({
       themes: {
-        // Register each theme within this array:
-        preset: ["skeleton", "modern", "crimson"],
+        preset: [
+          {
+            name: "skeleton",
+            enhancements: true,
+          },
+        ],
       },
     }),
   ],
-};
-
-module.exports = config;
+} satisfies Config;

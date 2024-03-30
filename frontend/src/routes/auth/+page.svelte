@@ -19,7 +19,7 @@
     const plainText = await Cipherly.decrypt(
       cipherText,
       envelope.dek,
-      envelope.iv
+      envelope.iv,
     );
     return Cipherly.decodeUtf8(plainText);
   }
@@ -38,21 +38,17 @@
 </div>
 
 {#if $token === null}
-  <div class="mt-4">
-    <button class="btn variant-filled" type="button" on:click={login}>
-      Login to Decrypt
-    </button>
-  </div>
+  <button class="btn variant-filled" type="button" on:click={login}>
+    Login to Decrypt
+  </button>
 {:else}
-  <div class="mt-4">
-    <button
-      class="btn variant-filled"
-      type="button"
-      on:click={() => (plainText = decrypt(payload))}
-    >
-      Decrypt
-    </button>
-  </div>
+  <button
+    class="btn variant-filled"
+    type="button"
+    on:click={() => (plainText = decrypt(payload))}
+  >
+    Decrypt
+  </button>
 {/if}
 
 {#if plainText}
@@ -61,9 +57,11 @@
     <div class="mt-8">Decrypting...</div>
   {:then plainText}
     <label class="label" for="plainText">Decrypted Plaintext</label>
-    <div id="plainText" class="p-3 mb-2 border rounded-md font-mono">
-      {plainText}
-    </div>
+    <aside class="alert variant-ghost mb-2">
+      <div class="alert-message">
+        {plainText}
+      </div>
+    </aside>
     <button
       class="btn variant-filled"
       type="button"

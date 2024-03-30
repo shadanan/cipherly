@@ -1,19 +1,20 @@
 <script lang="ts">
   import * as Cipherly from "$lib/cipherly";
+  import { InputChip } from "@skeletonlabs/skeleton";
 
   let plainText = "";
-  let email = "";
+  let emails: string[] = [];
   let payload: Promise<string> | null = null;
 
-  async function encrypt(plainText: string, email: string): Promise<string> {
+  async function encrypt(plainText: string, emails: string[]): Promise<string> {
     const dek = await Cipherly.generateKey();
     const iv = Cipherly.generateIv();
     const cipherText = await Cipherly.encrypt(
       Cipherly.encodeUtf8(plainText),
       dek,
-      iv
+      iv,
     );
-    const sealedEnvelope = await Cipherly.seal({ dek, iv, emails: [email] });
+    const sealedEnvelope = await Cipherly.seal({ dek, iv, emails });
     return Cipherly.encodeAuthPayload({ sealedEnvelope, cipherText });
   }
 </script>
@@ -32,22 +33,19 @@
 
 <div class="mt-4">
   <label class="label" for="emails">Authorized Emails</label>
-  <div class="flex space-x-2">
-    <input
-      id="emails"
-      type="text"
-      class="input"
-      placeholder="Emails of the users authorized to decrypt the secret"
-      bind:value={email}
-    />
-    <button
-      type="button"
-      class="btn variant-filled"
-      on:click={() => (payload = encrypt(plainText, email))}
-    >
-      Encrypt
-    </button>
-  </div>
+  <InputChip
+    bind:value={emails}
+    name="chips"
+    class="mb-2"
+    placeholder="Emails of the users authorized to decrypt the secret"
+  />
+  <button
+    type="button"
+    class="btn variant-filled"
+    on:click={() => (payload = encrypt(plainText, emails))}
+  >
+    Encrypt
+  </button>
 </div>
 
 {#if payload}

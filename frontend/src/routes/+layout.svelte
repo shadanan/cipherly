@@ -1,33 +1,68 @@
 <script lang="ts">
+  import {
+    arrow,
+    autoUpdate,
+    computePosition,
+    flip,
+    offset,
+    shift,
+  } from "@floating-ui/dom";
+  import {
+    AppBar,
+    AppShell,
+    Drawer,
+    getDrawerStore,
+    initializeStores,
+    storePopup,
+  } from "@skeletonlabs/skeleton";
   import "../app.pcss";
   import Login from "./login.svelte";
-  import Sidebar from "./sidebar.svelte";
+  import Navigation from "./navigation.svelte";
+
+  initializeStores();
+  storePopup.set({ computePosition, autoUpdate, flip, shift, offset, arrow });
+
+  const drawerStore = getDrawerStore();
+
+  function drawerOpen() {
+    drawerStore.open({});
+  }
 </script>
 
-<main>
-  <div class="space-y-6 pb-16">
-    <div class="flex flex-col space-y-8">
-      <aside class="bg-slate-400 p-2 flex">
-        <Sidebar
-          items={[
-            { title: "Home", href: "/" },
-            { title: "Password Encrypt", href: "/password/encrypt/" },
-            { title: "Password Decrypt", href: "/password/" },
-            { title: "Authorization Encrypt", href: "/auth/encrypt/" },
-            { title: "Authorization Decrypt", href: "/auth/" },
-          ]}
-        />
-        <div class="flex-auto"></div>
+<Drawer><Navigation /></Drawer>
+<AppShell slotSidebarLeft="bg-surface-500/5 w-0 lg:w-64">
+  <svelte:fragment slot="header">
+    <AppBar>
+      <svelte:fragment slot="lead">
+        <button class="lg:hidden btn btn-sm mr-4" on:click={drawerOpen}>
+          <span>
+            <svg viewBox="0 0 100 80" class="fill-token w-4 h-4">
+              <rect width="100" height="20" />
+              <rect y="30" width="100" height="20" />
+              <rect y="60" width="100" height="20" />
+            </svg>
+          </span>
+        </button>
+        <strong class="text-xl">Cipherly</strong>
+      </svelte:fragment>
+      <svelte:fragment slot="trail">
         <Login />
-      </aside>
-      <div class="flex-1 p-2">
-        <slot />
-      </div>
-    </div>
+      </svelte:fragment>
+    </AppBar>
+  </svelte:fragment>
 
-    <div class="mt-24 text-gray-500 text-sm text-center">
+  <svelte:fragment slot="sidebarLeft">
+    <Navigation />
+  </svelte:fragment>
+
+  <svelte:fragment slot="footer">
+    <div class="mt-24 text-center text-sm text-gray-500">
       Made with ❤︎ by
       <a href="https://www.youtube.com/@friendlytl">The FriendlyTL</a>
     </div>
+  </svelte:fragment>
+
+  <div class="p-4">
+    <slot />
   </div>
-</main>
+</AppShell>
