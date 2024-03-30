@@ -4,6 +4,7 @@ import typography from "@tailwindcss/typography";
 import { join } from "path";
 import type { Config } from "tailwindcss";
 import { fontFamily } from "tailwindcss/defaultTheme";
+import { cipherlyTheme } from "./cipherly";
 
 export default {
   darkMode: ["class"],
@@ -67,6 +68,7 @@ export default {
     typography,
     skeleton({
       themes: {
+        custom: [cipherlyTheme],
         preset: [
           {
             name: "skeleton",
