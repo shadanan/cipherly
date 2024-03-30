@@ -38,12 +38,12 @@
 </div>
 
 {#if $token === null}
-  <button class="btn variant-filled" type="button" on:click={login}>
+  <button class="variant-filled btn" type="button" on:click={login}>
     Login to Decrypt
   </button>
 {:else}
   <button
-    class="btn variant-filled"
+    class="variant-filled btn"
     type="button"
     on:click={() => (plainText = decrypt(payload))}
   >
@@ -52,7 +52,7 @@
 {/if}
 
 {#if plainText}
-  <hr class="mt-8 mb-8" />
+  <hr class="mb-8 mt-8" />
   {#await plainText}
     <div class="mt-8">Decrypting...</div>
   {:then plainText}
@@ -63,7 +63,7 @@
       </div>
     </aside>
     <button
-      class="btn variant-filled"
+      class="variant-filled btn"
       type="button"
       on:click={() => navigator.clipboard.writeText(plainText)}
     >

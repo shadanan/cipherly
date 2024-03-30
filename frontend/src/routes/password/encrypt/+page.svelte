@@ -13,7 +13,7 @@
     const cipherText = await Cipherly.encrypt(
       Cipherly.encodeUtf8(plainText),
       key,
-      iv
+      iv,
     );
 
     return Cipherly.encodePasswordPayload({ salt, iv, cipherText });
@@ -44,7 +44,7 @@
     />
     <button
       type="button"
-      class="btn variant-filled"
+      class="variant-filled btn"
       on:click={() => (payload = encrypt(plainText, password))}
     >
       Encrypt
@@ -53,7 +53,7 @@
 </div>
 
 {#if payload}
-  <hr class="mt-8 mb-8" />
+  <hr class="mb-8 mt-8" />
   {#await payload}
     <div class="mt-8">Encrypting...</div>
   {:then payload}
@@ -67,14 +67,14 @@
 
     <button
       type="button"
-      class="btn variant-filled"
+      class="variant-filled btn"
       on:click={() => navigator.clipboard.writeText(payload)}
     >
       Copy Ciphertext
     </button>
     <button
       type="button"
-      class="btn variant-filled"
+      class="variant-filled btn"
       on:click={() => navigator.clipboard.writeText(url)}
     >
       Copy Decrypt URL

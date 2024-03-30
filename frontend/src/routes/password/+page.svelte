@@ -40,7 +40,7 @@
     />
     <button
       type="button"
-      class="btn variant-filled"
+      class="variant-filled btn"
       on:click={() => (plainText = decrypt(payload, password))}
     >
       Decrypt
@@ -49,7 +49,7 @@
 </div>
 
 {#if plainText}
-  <hr class="mt-8 mb-8" />
+  <hr class="mb-8 mt-8" />
   {#await plainText}
     <div class="mt-8">Decrypting...</div>
   {:then plainText}
@@ -61,7 +61,7 @@
     </aside>
     <button
       type="button"
-      class="btn variant-filled"
+      class="variant-filled btn"
       on:click={() => navigator.clipboard.writeText(plainText)}
     >
       Copy Plaintext
