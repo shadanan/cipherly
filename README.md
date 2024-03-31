@@ -61,14 +61,15 @@ gcloud run deploy cipherly \
    ```sh
    cd frontend
    npm install
+   npm run build
    npm run dev
    ```
 
-1. Start a backend server.
+1. Start a backend server using a test [KEK](https://cloud.google.com/kms/docs/envelope-encryption#key_encryption_keys)
+   First, install [cargo-watch](https://crates.io/crates/cargo-watch) then run: 
 
    ```sh
-   cd backend
-   cargo watch -x run
+   KEK="jRg36ErQ6FLcc7nZgngOpjJnJLGwA3xaMy0yx1pxJrI" cargo watch -x run
    ```
 
 ## Message Format
