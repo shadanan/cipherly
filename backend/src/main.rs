@@ -73,7 +73,7 @@ fn cipherly(base64_kek: &str, certs: Certs) -> Rocket<Build> {
 #[launch]
 fn rocket() -> Rocket<Build> {
     env::set_var("ROCKET_PORT", env::var("PORT").unwrap_or("8000".into()));
-    let kek = env::var("KEK").unwrap();
+    let kek = env::var("KEK").expect("Error: KEK environment variable is not set.");
     let certs = google::fetch().unwrap();
     cipherly(&kek, certs)
 }
