@@ -12,6 +12,7 @@
 </script>
 
 <div>
+  <!-- Mobile -->
   <div class="sm:hidden">
     <label for="tabs" class="sr-only">Select a tab</label>
     <!-- TODO: Use an "onChange" listener to redirect the user to the selected tab URL. -->
@@ -29,6 +30,7 @@
       {/each}
     </select>
   </div>
+
   <div class="hidden sm:block">
     <div class="border-gray-200 border-b-4">
       <nav class="-mb-px flex space-x-8 justify-center" aria-label="Tabs">
@@ -36,8 +38,8 @@
           {#if item.href}
             <a
               class={cn(
-                "flex items-center border-transparent whitespace-nowrap -mb-[3px] py-4 px-1 border-b-4 font-bold text-xl",
-                item.href.startsWith($page.url.pathname.slice(0, -1))
+                "flex items-center border-transparent whitespace-nowrap -mb-[3px] py-4 px-1 border-b-4 font-bold text-lg",
+                $page.url.pathname !== "/" && item.href.startsWith($page.url.pathname.slice(0, -1))
                   ? "border-primary border-b-4 text-primary"
                   : "text-gray-500 hover:text-gray-700 hover:border-gray-300",
                 item.disabled && "cursor-not-allowed opacity-80"

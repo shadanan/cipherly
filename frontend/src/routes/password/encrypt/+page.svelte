@@ -43,12 +43,9 @@
 </script>
 
 <div class="space-y-8">
-  <div class="p-10 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+  <div class="p-8 border-2 border-gray-300 rounded-md space-y-6 bg-white">
     <div>
       <h1 class="text-xl font-bold">Password based encryption</h1>
-      <p class="text-base text-gray-400">
-        Nostrud ad in nulla nisi incididunt dolor sint proident dolore qui labore aute.
-      </p>
     </div>
 
     <form class="space-y-6" on:submit|preventDefault={() => (envelope = encrypt(plainText, password))}>
@@ -79,7 +76,7 @@
   </div>
 
   {#if envelope}
-    <div class="p-10 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+    <div class="p-8 border-2 border-gray-300 rounded-md space-y-6 bg-white">
       <div>
         <h1 class="text-xl font-bold">Encrypted content</h1>
       </div>

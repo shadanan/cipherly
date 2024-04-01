@@ -39,12 +39,9 @@
 </script>
 
 <div class="space-y-8">
-  <div class="p-10 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+  <div class="p-8 border-2 border-gray-300 rounded-md space-y-6 bg-white">
     <div>
       <h1 class="text-xl font-bold">Authorization based decryption</h1>
-      <p class="text-base text-gray-400">
-        Nostrud ad in nulla nisi incididunt dolor sint proident dolore qui labore aute.
-      </p>
     </div>
 
     {#if $token === null}
@@ -71,56 +68,48 @@
           <Button class="min-w-[140px] text-lg" type="submit">Decrypt</Button>
         </div>
       </form>
-
-      {#if plainText}
-        <div class="p-10 border-2 border-gray-300 rounded-md space-y-6 bg-white">
-          <div>
-            <h1 class="text-xl font-bold">Encrypted content</h1>
-          </div>
-          {#await plainText}
-            <div class="py-6 space-y-6">
-              <Skeleton class="h-20 w-full" />
-              <Skeleton class="h-10 w-full" />
-            </div>
-          {:then plainText}
-            <div class="space-y-2">
-              <Label for="plainText" class="uppercase text-gray-500 tracking-wider text-sm">
-                Decrypted Plaintext
-              </Label>
-              <Textarea
-                class="text-base border-2 border-gray-300 focus-visible:ring-0 disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
-                id="plainText"
-                disabled
-                value={plainText}
-                placeholder="The decrypted plainText"
-              />
-            </div>
-
-            <Button
-              variant="secondary"
-              class="min-w-[140px]"
-              type="button"
-              on:click={() => copyPlaintext(plainText)}
-            >
-              {#if copiedPlaintext}
-                Copied!
-              {:else}
-                Copy Plaintext
-              {/if}
-            </Button>
-          {:catch err}
-            <Alert.Root variant="destructive">
-              {#if err.code === 401}
-                <Alert.Title>Unauthorized</Alert.Title>
-                <Alert.Description>You are not authorized to decrypt this secret.</Alert.Description>
-              {:else}
-                <Alert.Title>Failed to Decrypt</Alert.Title>
-                <Alert.Description>Password is incorrect or ciphertext is invalid.</Alert.Description>
-              {/if}
-            </Alert.Root>
-          {/await}
-        </div>
-      {/if}
     {/if}
   </div>
+  {#if plainText}
+    <div class="p-8 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+      <div>
+        <h1 class="text-xl font-bold">Encrypted content</h1>
+      </div>
+      {#await plainText}
+        <div class="py-6 space-y-6">
+          <Skeleton class="h-20 w-full" />
+          <Skeleton class="h-10 w-full" />
+        </div>
+      {:then plainText}
+        <div class="space-y-2">
+          <Label for="plainText" class="uppercase text-gray-500 tracking-wider text-sm">Decrypted Plaintext</Label>
+          <Textarea
+            class="text-base border-2 border-gray-300 focus-visible:ring-0 disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
+            id="plainText"
+            disabled
+            value={plainText}
+            placeholder="The decrypted plainText"
+          />
+        </div>
+
+        <Button variant="secondary" class="min-w-[140px]" type="button" on:click={() => copyPlaintext(plainText)}>
+          {#if copiedPlaintext}
+            Copied!
+          {:else}
+            Copy Plaintext
+          {/if}
+        </Button>
+      {:catch err}
+        <Alert.Root variant="destructive">
+          {#if err.code === 401}
+            <Alert.Title>Unauthorized</Alert.Title>
+            <Alert.Description>You are not authorized to decrypt this secret.</Alert.Description>
+          {:else}
+            <Alert.Title>Failed to Decrypt</Alert.Title>
+            <Alert.Description>Password is incorrect or ciphertext is invalid.</Alert.Description>
+          {/if}
+        </Alert.Root>
+      {/await}
+    </div>
+  {/if}
 </div>

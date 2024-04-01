@@ -12,16 +12,16 @@
   }[];
 </script>
 
-{#if items.length}
-  <nav class="relative w-full flex justify-center space-x-4">
+{#if items.length && $page.url.pathname !== "/"}
+  <nav class="relative w-full flex justify-center p-2 rounded-md bg-gray-100 my-2">
     {#each items as item}
       {#if $page.url.pathname.startsWith(item.matches) && item.href}
-        <a href={item.disabled ? "/" : item.href}>
+        <a href={item.disabled ? "/" : item.href} class="flex-1 flex justify-center rounded-md">
           <div
             class={cn(
-              "w-[150px] flex justify-center hover:bg-accent hover:text-accent-foreground group  items-center rounded-md px-4 py-3 text-base font-medium",
+              " w-full flex justify-center hover:text-accent-foreground group  items-center rounded-md px-2 py-2 text-base font-medium",
               $page.url.pathname == ensureTrailingSlash(item.href)
-                ? "bg-accent text-black font-bold border border-gray-300"
+                ? "bg-white shadow-sm  text-black font-bold border-gray-300"
                 : "transparent text-gray-400",
               item.disabled && "cursor-not-allowed opacity-80"
             )}
