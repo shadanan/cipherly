@@ -1,4 +1,4 @@
-<section class="py-10 text-lg space-y-10">
+<section class="py-4 md:py-10 text-lg space-y-10">
   <div class="space-y-4">
     <h1 class="text-3xl pb-1 font-bold">What is Cipherly?</h1>
     <p class="">Cipherly is a simple password based encryption and decryption tool.</p>
