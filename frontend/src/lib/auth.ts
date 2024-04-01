@@ -2,11 +2,7 @@ import { GoogleOAuthProvider } from "google-oauth-gsi";
 import { jwtDecode } from "jwt-decode";
 import { derived, writable } from "svelte/store";
 
-type Claims = {
-  name: string;
-  email: string;
-  picture: string;
-};
+const LOCAL_STORAGE_KEY = "CIPHERLY.CREDENTIAL";
 
 const googleProvider = new GoogleOAuthProvider({
   clientId:
@@ -14,15 +10,17 @@ const googleProvider = new GoogleOAuthProvider({
 });
 
 export const token = writable<string | null>(
-  sessionStorage.getItem("credential") || null,
+  sessionStorage.getItem(LOCAL_STORAGE_KEY) || null,
 );
 
 export function logout() {
   token.set(null);
-  sessionStorage.removeItem("credential");
+  sessionStorage.removeItem(LOCAL_STORAGE_KEY);
 }
 
 export function login() {
+  console.log("login -> googleProvider.useGoogleOneTapLogin");
+
   googleProvider.useGoogleOneTapLogin({
     cancel_on_tap_outside: true,
     onSuccess: (res) => {
@@ -31,14 +29,22 @@ export function login() {
         return;
       }
       token.set(res.credential);
-      sessionStorage.setItem("credential", res.credential);
+      sessionStorage.setItem(LOCAL_STORAGE_KEY, res.credential);
+    },
+    onError() {
+      console.error("Error useGoogleOneTapLogin");
     },
   })();
 }
 
-export const claims = derived(token, ($jwt) => {
+export const currentUser = derived(token, ($jwt) => {
   if ($jwt === null) {
+    return undefined;
+  }
+  try {
+    return jwtDecode($jwt) as App.Locals["user"];
+  } catch (error) {
+    console.error("Failed to decode JWT", error);
     return null;
   }
-  return jwtDecode($jwt) as Claims;
 });

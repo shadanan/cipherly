@@ -3,10 +3,6 @@ import { cubicOut } from "svelte/easing";
 import type { TransitionConfig } from "svelte/transition";
 import { twMerge } from "tailwind-merge";
 
-export function cn(...inputs: ClassValue[]) {
-  return twMerge(clsx(inputs));
-}
-
 type FlyAndScaleParams = {
   y?: number;
   x?: number;
@@ -60,3 +56,42 @@ export const flyAndScale = (
     easing: cubicOut,
   };
 };
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function clickOutside(
+  node: HTMLElement,
+  handler: () => void,
+): { destroy: () => void } {
+  const onClick = (event: MouseEvent) =>
+    node &&
+    !node.contains(event.target as HTMLElement) &&
+    !event.defaultPrevented &&
+    handler();
+
+  document.addEventListener("click", onClick, true);
+
+  return {
+    destroy() {
+      document.removeEventListener("click", onClick, true);
+    },
+  };
+}
+
+export function scrollToBottom(node: HTMLElement) {
+  const scroll = () =>
+    node.scroll({
+      top: node.scrollHeight,
+      behavior: "smooth",
+    });
+  scroll();
+
+  return { update: scroll };
+}
+
+export function ensureTrailingSlash(path: string) {
+  if (path.endsWith("/")) return path;
+  return path + "/";
+}

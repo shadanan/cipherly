@@ -1,4 +1,5 @@
 import { fontFamily } from "tailwindcss/defaultTheme";
+const colors = require("tailwindcss/colors");
 
 /** @type {import('tailwindcss').Config} */
 const config = {
@@ -6,6 +7,8 @@ const config = {
   content: ["./src/**/*.{html,js,svelte,ts}"],
   safelist: ["dark"],
   theme: {
+    primary: colors.sky["500"],
+    secondary: colors.gray["500"],
     container: {
       center: true,
       padding: "2rem",
@@ -55,10 +58,11 @@ const config = {
         sm: "calc(var(--radius) - 4px)",
       },
       fontFamily: {
-        sans: [...fontFamily.sans],
+        sans: ["Nunito", ...fontFamily.sans],
       },
     },
   },
+  plugins: [require("@tailwindcss/forms")],
 };
 
 export default config;

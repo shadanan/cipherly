@@ -1,14 +1,16 @@
 <script lang="ts">
+  import { Skeleton } from "$/lib/components/ui/skeleton";
   import * as Cipherly from "$lib/cipherly";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { Separator } from "$lib/components/ui/separator";
   import { Textarea } from "$lib/components/ui/textarea";
 
   let payload = "";
   let password = "";
+  let plaintext: Promise<string> | null = null;
+  let copiedPlaintext: boolean;
   let plainText: Promise<string> | null = null;
 
   if (location.hash) {
@@ -21,57 +23,88 @@
     const plainText = await Cipherly.decrypt(cipherText, key, iv);
     return Cipherly.decodeUtf8(plainText);
   }
+
+  function copyPlaintext(url: string | null): void {
+    if (!url) return;
+    navigator.clipboard.writeText(url);
+    copiedPlaintext = true;
+    setTimeout(() => {
+      copiedPlaintext = false;
+    }, 500);
+  }
 </script>
 
-<h1 class="text-4xl font-extrabold">Password Based Decryption</h1>
-
-<div class="mt-4">
-  <Label for="payload">Ciphertext Payload</Label>
-  <Textarea
-    id="payload"
-    bind:value={payload}
-    placeholder="The ciphertext payload to be decrypted"
-  />
-</div>
-
-<div class="mt-4">
-  <Label for="password">Password</Label>
-  <div class="flex space-x-2">
-    <Input
-      type="password"
-      placeholder="The password to use for decryption"
-      bind:value={password}
-    />
-    <Button
-      type="button"
-      on:click={() => (plainText = decrypt(payload, password))}
-    >
-      Decrypt
-    </Button>
-  </div>
-</div>
-
-{#if plainText}
-  <Separator class="mt-8 mb-8" />
-  {#await plainText}
-    <div class="mt-8">Decrypting...</div>
-  {:then plainText}
-    <Label for="plainText">Decrypted Plaintext</Label>
-    <div id="plainText" class="p-3 mb-2 border rounded-md font-mono">
-      {plainText}
+<div class="space-y-8">
+  <div class="p-10 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+    <div>
+      <h1 class="text-xl font-bold">Password based decryption</h1>
+      <p class="text-base text-gray-400">
+        Nostrud ad in nulla nisi incididunt dolor sint proident dolore qui labore aute.
+      </p>
     </div>
-    <Button
-      type="button"
-      on:click={() => navigator.clipboard.writeText(plainText)}
-    >
-      Copy Plaintext
-    </Button>
-  {:catch}
-    <Alert.Root variant="destructive">
-      <Alert.Title>Failed to Decrypt</Alert.Title>
-      <Alert.Description>
-        Password is incorrect or ciphertext is invalid.
-      </Alert.Description>
-    </Alert.Root>
-  {/await}
-{/if}
+
+    <form class="space-y-6" on:submit|preventDefault={() => (plaintext = decrypt(envelope, password))}>
+      <div class="space-y-2">
+        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plaintext">Ciphertext Envelope</Label>
+        <Textarea
+          required
+          class="text-base border-2 border-gray-300 focus-visible:ring-0"
+          id="envelope"
+          bind:value={envelope}
+          placeholder="The ciphertext envelope to be decrypted"
+        />
+      </div>
+
+      <div class="space-y-2">
+        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plaintext">Password</Label>
+        <Input
+          class="text-base border-2 border-gray-300 focus-visible:ring-0"
+          type="password"
+          placeholder="The password to use for decryption"
+          bind:value={password}
+        />
+      </div>
+
+      <div class="pt-4">
+        <Button class="min-w-[140px] text-lg" type="submit">Decrypt</Button>
+      </div>
+    </form>
+  </div>
+
+  {#if plaintext}
+    <div class="p-10 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+      <div>
+        <h1 class="text-xl font-bold">Encrypted content</h1>
+      </div>
+      {#await plaintext}
+        <div class="py-6 space-y-6">
+          <Skeleton class="h-20 w-full" />
+          <Skeleton class="h-10 w-full" />
+        </div>
+      {:then plaintext}
+        <div class="space-y-2">
+          <Label class="uppercase text-gray-500 tracking-wider text-sm" for="envelope">Decrypted Plaintext</Label>
+          <Textarea
+            class="text-base border-2 border-gray-300 focus-visible:ring-0 disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
+            id="plaintext"
+            disabled
+            value={plaintext}
+            placeholder="The decrypted plaintext"
+          />
+        </div>
+        <Button variant="secondary" class="min-w-[140px]" type="button" on:click={() => copyPlaintext(plaintext)}>
+          {#if copiedPlaintext}
+            Copied!
+          {:else}
+            Copy Plaintext
+          {/if}
+        </Button>
+      {:catch}
+        <Alert.Root variant="destructive" class="space-y-2">
+          <Alert.Title>Failed to Decrypt</Alert.Title>
+          <Alert.Description>Password is incorrect or ciphertext is invalid.</Alert.Description>
+        </Alert.Root>
+      {/await}
+    </div>
+  {/if}
+</div>
