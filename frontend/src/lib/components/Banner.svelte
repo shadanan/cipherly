@@ -10,12 +10,5 @@
         <div class="text-4xl font-extrabold uppercase">Cipherly</div>
       </div>
     </a>
-    <!-- <p class="md:w-1/2 mx-auto leading-relaxed text-md text-gray-500">
-      A browser-based encryption tool using <a
-        target="_blank"
-        href="https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto"
-        class="underline underline-offset-4">SubtleCrypto</a
-      > for password-based encryption/decryption with operations exclusively in the browser for enhanced security.
-    </p> -->
   </div>
 </div>
