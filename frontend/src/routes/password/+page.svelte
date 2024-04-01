@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CopyText from "$/lib/components/CopyText.svelte";
   import { Skeleton } from "$/lib/components/ui/skeleton";
   import * as Cipherly from "$lib/cipherly";
   import * as Alert from "$lib/components/ui/alert";
@@ -10,7 +11,6 @@
   let payload = "";
   let password = "";
   let plainText: Promise<string> | null = null;
-  let copiedPlaintext: boolean;
 
   if (location.hash) {
     payload = location.hash.slice(1);
@@ -21,15 +21,6 @@
     const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
     const plainText = await Cipherly.decrypt(cipherText, key, iv);
     return Cipherly.decodeUtf8(plainText);
-  }
-
-  function copyPlaintext(url: string | null): void {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
-    copiedPlaintext = true;
-    setTimeout(() => {
-      copiedPlaintext = false;
-    }, 500);
   }
 </script>
 
@@ -92,13 +83,7 @@
             placeholder="The decrypted plainText"
           />
         </div>
-        <Button variant="secondary" class="min-w-[140px]" type="button" on:click={() => copyPlaintext(plainText)}>
-          {#if copiedPlaintext}
-            Copied!
-          {:else}
-            Copy Plaintext
-          {/if}
-        </Button>
+        <CopyText label="Plain text" text={plainText} />
       {:catch}
         <Alert.Root variant="destructive" class="rounded space-y-2">
           <Alert.Title>Failed to Decrypt</Alert.Title>

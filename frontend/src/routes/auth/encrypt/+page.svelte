@@ -1,4 +1,5 @@
 <script lang="ts">
+  import CopyText from "$/lib/components/CopyText.svelte";
   import { Badge } from "$/lib/components/ui/badge";
   import { Skeleton } from "$/lib/components/ui/skeleton";
   import * as Cipherly from "$lib/cipherly";
@@ -13,8 +14,6 @@
   let email = "";
   let plaintext = "";
   let payload: Promise<string> | null = null;
-  let copiedCipherText: boolean;
-  let copiedDecryptUrl: boolean;
 
   async function encrypt(plainText: string, emails: string[]): Promise<string> {
     const dek = await Cipherly.generateKey();
@@ -22,24 +21,6 @@
     const cipherText = await Cipherly.encrypt(Cipherly.encodeUtf8(plainText), dek, iv);
     const sealedEnvelope = await Cipherly.seal({ dek, iv, emails });
     return Cipherly.encodeAuthPayload({ sealedEnvelope, cipherText });
-  }
-
-  function copyCipherText(envelope: string | null): void {
-    if (!envelope) return;
-    navigator.clipboard.writeText(envelope);
-    copiedCipherText = true;
-    setTimeout(() => {
-      copiedCipherText = false;
-    }, 500);
-  }
-
-  function copyDecryptUrl(url: string | null): void {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
-    copiedDecryptUrl = true;
-    setTimeout(() => {
-      copiedDecryptUrl = false;
-    }, 500);
   }
 </script>
 
@@ -147,20 +128,8 @@
         </div>
 
         <div class="pt-4 space-x-2">
-          <Button class="min-w-[140px]" variant="secondary" type="button" on:click={() => copyCipherText(payload)}>
-            {#if copiedCipherText}
-              Copied!
-            {:else}
-              Copy Ciphertext
-            {/if}
-          </Button>
-          <Button variant="secondary" class="min-w-[140px]" type="button" on:click={() => copyDecryptUrl(url)}>
-            {#if copiedDecryptUrl}
-              Copied!
-            {:else}
-              Copy Decrypt URL
-            {/if}
-          </Button>
+          <CopyText label="Ciphertext" text={payload} />
+          <CopyText label="Decrypt URL" text={url} />
         </div>
       {:catch error}
         <Alert.Root variant="destructive" class="rounded space-y-2">

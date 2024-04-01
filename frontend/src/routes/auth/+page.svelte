@@ -8,10 +8,10 @@
   import { Label } from "$lib/components/ui/label";
   import { Textarea } from "$lib/components/ui/textarea";
   import { Skeleton } from "$/lib/components/ui/skeleton";
+  import CopyText from "$/lib/components/CopyText.svelte";
 
   let payload = "";
   let plainText: Promise<string> | null = null;
-  let copiedPlaintext: boolean;
 
   if (location.hash) {
     payload = location.hash.slice(1);
@@ -27,16 +27,6 @@
     const plainText = await Cipherly.decrypt(cipherText, envelope.dek, envelope.iv);
     return Cipherly.decodeUtf8(plainText);
   }
-
-  function copyPlaintext(url: string | null): void {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
-    copiedPlaintext = true;
-    setTimeout(() => {
-      copiedPlaintext = false;
-    }, 500);
-  }
-  $: console.log({ token: $token, currentUser: $currentUser });
 </script>
 
 <div class="space-y-8">
@@ -109,14 +99,7 @@
             placeholder="The decrypted plainText"
           />
         </div>
-
-        <Button variant="secondary" class="min-w-[140px]" type="button" on:click={() => copyPlaintext(plainText)}>
-          {#if copiedPlaintext}
-            Copied!
-          {:else}
-            Copy Plaintext
-          {/if}
-        </Button>
+        <CopyText label="PlainText" text={plainText} />
       {:catch err}
         <Alert.Root variant="destructive" class="rounded space-y-2">
           {#if err.code === 401}

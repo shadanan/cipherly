@@ -6,12 +6,11 @@
   import { Label } from "$lib/components/ui/label";
   import { Textarea } from "$lib/components/ui/textarea";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
+  import CopyText from "$/lib/components/CopyText.svelte";
 
   let plainText = "";
   let password = "";
   let envelope: Promise<string> | null = null;
-  let copiedCipherText: boolean;
-  let copiedDecryptUrl: boolean;
 
   async function encrypt(plainText: string, password: string): Promise<string> {
     const salt = Cipherly.generateSalt();
@@ -21,24 +20,6 @@
     const cipherText = await Cipherly.encrypt(Cipherly.encodeUtf8(plainText), key, iv);
 
     return Cipherly.encodePasswordPayload({ salt, iv, cipherText });
-  }
-
-  function copyCipherText(envelope: string | null): void {
-    if (!envelope) return;
-    navigator.clipboard.writeText(envelope);
-    copiedCipherText = true;
-    setTimeout(() => {
-      copiedCipherText = false;
-    }, 500);
-  }
-
-  function copyDecryptUrl(url: string | null): void {
-    if (!url) return;
-    navigator.clipboard.writeText(url);
-    copiedDecryptUrl = true;
-    setTimeout(() => {
-      copiedDecryptUrl = false;
-    }, 500);
   }
 </script>
 
@@ -103,25 +84,8 @@
           />
         </div>
         <div class="pt-4 space-x-2">
-          <Button
-            class="min-w-[140px]"
-            variant="secondary"
-            type="button"
-            on:click={() => copyCipherText(envelope)}
-          >
-            {#if copiedCipherText}
-              Copied!
-            {:else}
-              Copy Ciphertext
-            {/if}
-          </Button>
-          <Button variant="secondary" class="min-w-[140px]" type="button" on:click={() => copyDecryptUrl(url)}>
-            {#if copiedDecryptUrl}
-              Copied!
-            {:else}
-              Copy Decrypt URL
-            {/if}
-          </Button>
+          <CopyText label="Decrypt CipherText" text={envelope} />
+          <CopyText label="Decrypt URL" text={url} />
         </div>
       {:catch error}
         <Alert.Root variant="destructive" class="rounded space-y-2">
