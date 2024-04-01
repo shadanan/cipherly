@@ -15,8 +15,8 @@
     <Banner />
     <TabsNav items={config.site.mainNav} />
     <Main>
-      <div class="container grid flex-1 gap-12 md:grid-cols-[200px_1fr]">
-        <aside class="hidden w-[200px] flex-col md:flex">
+      <div class="container">
+        <aside class="pb-8">
           <SideNav items={config.site.sidebarNav} />
         </aside>
         <main class="flex w-full flex-1 flex-col overflow-hidden">
