@@ -1,50 +1,53 @@
-import { GoogleOAuthProvider } from "google-oauth-gsi";
+import { GoogleOAuthProvider, googleLogout } from "google-oauth-gsi";
 import { jwtDecode } from "jwt-decode";
 import { derived, writable } from "svelte/store";
 
-const LOCAL_STORAGE_KEY = "CIPHERLY.CREDENTIAL";
+export type User = {
+  email: string;
+  name: string;
+  picture: string;
+  exp: number;
+};
 
-const googleProvider = new GoogleOAuthProvider({
+const CREDENTIAL_KEY = "credential";
+
+export const googleProvider = new GoogleOAuthProvider({
   clientId:
     "981002175662-g8jr2n89bptsn8n9ds1fn5edfheojr7i.apps.googleusercontent.com",
 });
 
 export const token = writable<string | null>(
-  sessionStorage.getItem(LOCAL_STORAGE_KEY) || null,
+  sessionStorage.getItem(CREDENTIAL_KEY) || null,
 );
 
 export function logout() {
+  googleLogout();
   token.set(null);
-  sessionStorage.removeItem(LOCAL_STORAGE_KEY);
+  sessionStorage.removeItem(CREDENTIAL_KEY);
 }
 
-export function login() {
-  console.log("login -> googleProvider.useGoogleOneTapLogin");
+export const login = googleProvider.useGoogleOneTapLogin({
+  cancel_on_tap_outside: true,
+  onSuccess: (res) => {
+    if (!res.credential) {
+      console.error("Credential is missing", res);
+      return;
+    }
+    token.set(res.credential);
+    sessionStorage.setItem(CREDENTIAL_KEY, res.credential);
+  },
+  onError: () => {
+    console.error("Error useGoogleOneTapLogin");
+  },
+});
 
-  googleProvider.useGoogleOneTapLogin({
-    cancel_on_tap_outside: true,
-    onSuccess: (res) => {
-      if (!res.credential) {
-        console.error("Credential is missing", res);
-        return;
-      }
-      token.set(res.credential);
-      sessionStorage.setItem(LOCAL_STORAGE_KEY, res.credential);
-    },
-    onError() {
-      console.error("Error useGoogleOneTapLogin");
-    },
-  })();
-}
-
-export const currentUser = derived(token, ($jwt) => {
+export const user = derived(token, ($jwt) => {
   if ($jwt === null) {
-    return undefined;
-  }
-  try {
-    return jwtDecode($jwt) as App.Locals["user"];
-  } catch (error) {
-    console.error("Failed to decode JWT", error);
     return null;
   }
+  const user = jwtDecode($jwt) as User;
+  if (user.exp * 1000 < Date.now()) {
+    return null;
+  }
+  return user;
 });

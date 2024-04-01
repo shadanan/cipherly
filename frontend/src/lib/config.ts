@@ -1,9 +1,9 @@
-import { Lock, KeyRound, Unlock, User } from "lucide-svelte";
+import { KeyRound, Lock, Unlock, User } from "lucide-svelte";
 
 const config = {
   site: {
     name: "Cipherly",
-    mainNav: [
+    primaryNavItems: [
       {
         title: "Password Encryption",
         href: "/password/encrypt/",
@@ -11,33 +11,33 @@ const config = {
       },
       {
         title: "Auth Encryption",
-        href: "/auth/encrypt",
+        href: "/auth/encrypt/",
         icon: User,
       },
     ],
-    sidebarNav: [
+    secondaryNavItems: [
       {
-        matches: "/password",
         title: "Encrypt",
         href: "/password/encrypt/",
+        parent: "/password/",
         icon: Lock,
       },
       {
-        matches: "/password",
         title: "Decrypt",
         href: "/password/",
+        parent: "/password/",
         icon: Unlock,
       },
       {
-        matches: "/auth",
         title: "Encrypt",
-        href: "/auth/encrypt",
+        href: "/auth/encrypt/",
+        parent: "/auth/",
         icon: Lock,
       },
       {
-        matches: "/auth",
         title: "Decrypt",
         href: "/auth/",
+        parent: "/auth/",
         icon: Unlock,
       },
     ],

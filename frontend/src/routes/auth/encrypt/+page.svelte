@@ -1,12 +1,12 @@
 <script lang="ts">
-  import CopyText from "$/lib/components/CopyText.svelte";
-  import { Badge } from "$/lib/components/ui/badge";
-  import { Skeleton } from "$/lib/components/ui/skeleton";
   import * as Cipherly from "$lib/cipherly";
+  import CopyText from "$lib/components/CopyText.svelte";
   import * as Alert from "$lib/components/ui/alert";
+  import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
+  import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
   import { Info, X } from "lucide-svelte";
 
@@ -18,29 +18,41 @@
   async function encrypt(plainText: string, emails: string[]): Promise<string> {
     const dek = await Cipherly.generateKey();
     const iv = Cipherly.generateIv();
-    const cipherText = await Cipherly.encrypt(Cipherly.encodeUtf8(plainText), dek, iv);
+    const cipherText = await Cipherly.encrypt(
+      Cipherly.encodeUtf8(plainText),
+      dek,
+      iv,
+    );
     const sealedEnvelope = await Cipherly.seal({ dek, iv, emails });
     return Cipherly.encodeAuthPayload({ sealedEnvelope, cipherText });
   }
 </script>
 
 <div class="space-y-8">
-  <div class="p-8 border-2 border-background-foreground rounded-md space-y-6 bg-background">
+  <div
+    class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
+  >
     <div>
-      <h1 class="text-xl font-bold text-foreground">Authorization based encryption</h1>
+      <h1 class="text-xl font-bold text-foreground">
+        Authorization based encryption
+      </h1>
     </div>
 
     <form
       class="space-y-6"
-      on:submit|preventDefault={() => (payload = encrypt(plaintext, Array.from(authorizedEmails)))}
+      on:submit|preventDefault={() =>
+        (payload = encrypt(plaintext, Array.from(authorizedEmails)))}
     >
       <div class="space-y-2">
-        <Label class="uppercase text-background-foreground tracking-wider text-sm" for="plaintext">
+        <Label
+          class="text-background-foreground text-sm uppercase tracking-wider"
+          for="plaintext"
+        >
           Ciphertext Envelope
         </Label>
         <Textarea
           required
-          class="text-base border-2 border-muted text-foreground focus:ring-0 focus-visible:ring-0"
+          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
           id="plaintext"
           bind:value={plaintext}
           placeholder="The plaintext secret to encrypt"
@@ -48,17 +60,20 @@
       </div>
 
       <div class="space-y-2">
-        <Label for="email" class="uppercase text-background-foreground tracking-wider text-sm">
+        <Label
+          for="email"
+          class="text-background-foreground text-sm uppercase tracking-wider"
+        >
           Authorized Emails
         </Label>
 
-        <p class="text-xs flex items-center space-x-1 text-blue-500">
-          <Info class="h-[12px] w-[12px] inline-block"></Info>
+        <p class="flex items-center space-x-1 text-xs text-blue-500">
+          <Info class="inline-block h-[12px] w-[12px]"></Info>
           <span>Click Enter after typing each email</span>
         </p>
         <Input
           id="email"
-          class="text-base border-2 border-muted text-foreground focus:ring-0 focus-visible:ring-0"
+          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
           placeholder="Recipient email address"
           type="email"
           required={authorizedEmails.size === 0}
@@ -73,19 +88,20 @@
         />
 
         {#if authorizedEmails.size > 0}
-          <div class="pt-2 flex flex-wrap">
+          <div class="flex flex-wrap pt-2">
             {#each Array.from(authorizedEmails) as email}
-              <Badge variant="secondary" class="text-sm space-x-1 mr-2 mb-2">
+              <Badge variant="secondary" class="mb-2 mr-2 space-x-1 text-sm">
                 <span>{email}</span>
                 <Button
-                  class="h-4 w-4 p-0 m-0 "
+                  class="m-0 h-4 w-4 p-0 "
                   variant="ghost"
                   on:click={() => {
-                    console.log("clicked!", authorizedEmails);
-                    authorizedEmails = new Set(Array.from(authorizedEmails).filter((x) => x !== email));
+                    authorizedEmails = new Set(
+                      Array.from(authorizedEmails).filter((x) => x !== email),
+                    );
                   }}
                 >
-                  <X class="text-gray-400 cursor-pointer hover:text-gray-500" />
+                  <X class="cursor-pointer text-gray-400 hover:text-gray-500" />
                 </Button>
               </Badge>
             {/each}
@@ -96,19 +112,23 @@
       </div>
 
       <div class="pt-4">
-        <Button class="min-w-[140px] text-lg font-bold" type="submit">Encrypt</Button>
+        <Button class="min-w-[140px] text-lg font-bold" type="submit"
+          >Encrypt</Button
+        >
       </div>
     </form>
   </div>
 
   {#if payload}
-    <div class="p-8 border-2 border-background-foreground rounded-md space-y-6 bg-background">
+    <div
+      class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
+    >
       <div>
         <h1 class="text-xl font-bold text-foreground">Encrypted content</h1>
       </div>
 
       {#await payload}
-        <div class="py-6 space-y-6">
+        <div class="space-y-6 py-6">
           <Skeleton class="h-20 w-full" />
           <Skeleton class="h-10 w-full" />
         </div>
@@ -116,23 +136,25 @@
         {@const url = Cipherly.authUrl() + payload}
 
         <div class="space-y-2">
-          <Label for="payload" class="uppercase text-background-foreground tracking-wider text-sm"
+          <Label
+            for="payload"
+            class="text-background-foreground text-sm uppercase tracking-wider"
             >Ciphertext Envelope</Label
           >
           <Textarea
-            class="text-base border-2 border-muted focus-visible:ring-0 focus-visible:outline-none disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
+            class="disabled:opacity-1 border-2 border-muted text-base focus-visible:outline-none focus-visible:ring-0 disabled:cursor-text disabled:text-green-600"
             id="payload"
             disabled
             value={payload}
           />
         </div>
 
-        <div class="pt-4 space-x-2">
+        <div class="space-x-2 pt-4">
           <CopyText label="Ciphertext" text={payload} />
           <CopyText label="Decrypt URL" text={url} />
         </div>
       {:catch error}
-        <Alert.Root variant="destructive" class="rounded space-y-2">
+        <Alert.Root variant="destructive" class="space-y-2 rounded">
           <Alert.Title>Failed to Encrypt</Alert.Title>
           <Alert.Description>
             {error.message}
