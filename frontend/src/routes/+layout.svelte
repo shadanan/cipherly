@@ -1,33 +1,29 @@
 <script lang="ts">
+  import Banner from "$/lib/components/Banner.svelte";
+  import DarkModeToggle from "$/lib/components/DarkModeToggle.svelte";
+  import Footer from "$/lib/components/Footer.svelte";
+  import Main from "$/lib/components/Main.svelte";
+  import PrimaryNav from "$/lib/components/PrimaryNav.svelte";
+  import SecondaryNav from "$/lib/components/SecondaryNav.svelte";
+  import config from "$/lib/config";
+  import { ModeWatcher } from "mode-watcher";
   import "../app.pcss";
-  import Login from "./login.svelte";
-  import Sidebar from "./sidebar.svelte";
 </script>
 
-<main>
-  <div class="space-y-6 pb-16">
-    <div class="flex flex-col space-y-8">
-      <aside class="bg-slate-400 p-2 flex">
-        <Sidebar
-          items={[
-            { title: "Home", href: "/" },
-            { title: "Password Encrypt", href: "/password/encrypt/" },
-            { title: "Password Decrypt", href: "/password/" },
-            { title: "Authorization Encrypt", href: "/auth/encrypt/" },
-            { title: "Authorization Decrypt", href: "/auth/" },
-          ]}
-        />
-        <div class="flex-auto"></div>
-        <Login />
-      </aside>
-      <div class="flex-1 p-2">
-        <slot />
+<ModeWatcher />
+<div class="min-h-full">
+  <DarkModeToggle />
+  <section class="text-foregound bg-background pt-16">
+    <Banner />
+    <PrimaryNav items={config.site.primaryNavItems} />
+    <Main>
+      <div class="px-4 lg:px-10">
+        <SecondaryNav items={config.site.secondaryNavItems} />
+        <div class="flex w-full flex-1 flex-col overflow-hidden">
+          <slot />
+        </div>
       </div>
-    </div>
-
-    <div class="mt-24 text-gray-500 text-sm text-center">
-      Made with ❤︎ by
-      <a href="https://www.youtube.com/@friendlytl">The FriendlyTL</a>
-    </div>
-  </div>
-</main>
+    </Main>
+  </section>
+  <Footer />
+</div>

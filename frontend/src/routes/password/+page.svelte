@@ -1,10 +1,11 @@
 <script lang="ts">
   import * as Cipherly from "$lib/cipherly";
+  import CopyText from "$lib/components/CopyText.svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { Separator } from "$lib/components/ui/separator";
+  import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
 
   let payload = "";
@@ -23,55 +24,92 @@
   }
 </script>
 
-<h1 class="text-4xl font-extrabold">Password Based Decryption</h1>
-
-<div class="mt-4">
-  <Label for="payload">Ciphertext Payload</Label>
-  <Textarea
-    id="payload"
-    bind:value={payload}
-    placeholder="The ciphertext payload to be decrypted"
-  />
-</div>
-
-<div class="mt-4">
-  <Label for="password">Password</Label>
-  <div class="flex space-x-2">
-    <Input
-      type="password"
-      placeholder="The password to use for decryption"
-      bind:value={password}
-    />
-    <Button
-      type="button"
-      on:click={() => (plainText = decrypt(payload, password))}
-    >
-      Decrypt
-    </Button>
-  </div>
-</div>
-
-{#if plainText}
-  <Separator class="mt-8 mb-8" />
-  {#await plainText}
-    <div class="mt-8">Decrypting...</div>
-  {:then plainText}
-    <Label for="plainText">Decrypted Plaintext</Label>
-    <div id="plainText" class="p-3 mb-2 border rounded-md font-mono">
-      {plainText}
+<div class="space-y-8">
+  <div
+    class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
+  >
+    <div>
+      <h1 class="text-xl font-bold text-foreground">
+        Password based decryption
+      </h1>
     </div>
-    <Button
-      type="button"
-      on:click={() => navigator.clipboard.writeText(plainText)}
+
+    <form
+      class="space-y-6"
+      on:submit|preventDefault={() => (plainText = decrypt(payload, password))}
     >
-      Copy Plaintext
-    </Button>
-  {:catch}
-    <Alert.Root variant="destructive">
-      <Alert.Title>Failed to Decrypt</Alert.Title>
-      <Alert.Description>
-        Password is incorrect or ciphertext is invalid.
-      </Alert.Description>
-    </Alert.Root>
-  {/await}
-{/if}
+      <div class="space-y-2">
+        <Label
+          class="text-background-foreground text-sm uppercase tracking-wider"
+          for="plainText">Ciphertext Envelope</Label
+        >
+        <Textarea
+          required
+          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
+          id="payload"
+          bind:value={payload}
+          placeholder="The ciphertext payload to be decrypted"
+        />
+      </div>
+
+      <div class="space-y-2">
+        <Label
+          class="text-background-foreground text-sm uppercase tracking-wider"
+          for="plainText">Password</Label
+        >
+        <Input
+          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
+          type="password"
+          placeholder="The password to use for decryption"
+          bind:value={password}
+        />
+      </div>
+
+      <div class="pt-4">
+        <Button class="min-w-[140px] text-lg font-bold" type="submit"
+          >Decrypt</Button
+        >
+      </div>
+    </form>
+  </div>
+
+  {#if plainText}
+    <div
+      class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
+    >
+      <div>
+        <h1 class="text-xl font-bold text-foreground">Encrypted content</h1>
+      </div>
+      {#await plainText}
+        <div class="space-y-6 py-6">
+          <Skeleton class="h-20 w-full" />
+          <Skeleton class="h-10 w-full" />
+        </div>
+      {:then plainText}
+        <div class="space-y-2">
+          <Label
+            class="text-background-foreground text-sm uppercase tracking-wider"
+            for="plainText"
+          >
+            Decrypted Plaintext
+          </Label>
+          <Textarea
+            class="disabled:opacity-1 border-2 border-muted text-base focus-visible:outline-none focus-visible:ring-0 disabled:cursor-text disabled:text-green-600"
+            id="plainText"
+            disabled
+            value={plainText}
+            placeholder="The decrypted plainText"
+          />
+        </div>
+        <CopyText label="Plain text" text={plainText} />
+      {:catch}
+        <Alert.Root variant="destructive" class="space-y-2 rounded">
+          <Alert.Title>Failed to Decrypt</Alert.Title>
+          <Alert.Description
+            >Password is incorrect or ciphertext is invalid.</Alert.Description
+          >
+        </Alert.Root>
+      {/await}
+    </div>
+  {/if}
+</div>

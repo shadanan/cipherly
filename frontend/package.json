@@ -13,6 +13,7 @@
     "@sveltejs/adapter-static": "^3.0.1",
     "@sveltejs/kit": "^2.0.0",
     "@sveltejs/vite-plugin-svelte": "^3.0.0",
+    "@tailwindcss/forms": "^0.5.7",
     "autoprefixer": "^10.4.16",
     "postcss": "^8.4.32",
     "postcss-load-config": "^5.0.2",
@@ -33,6 +34,7 @@
     "js-base64": "^3.7.7",
     "jwt-decode": "^4.0.0",
     "lucide-svelte": "^0.338.0",
+    "mode-watcher": "^0.3.0",
     "tailwind-merge": "^2.2.1",
     "tailwind-variants": "^0.2.0"
   }
