@@ -44,9 +44,9 @@
 </script>
 
 <div class="space-y-8">
-  <div class="p-8 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+  <div class="p-8 border-2 border-background-foreground rounded-md space-y-6 bg-background">
     <div>
-      <h1 class="text-xl font-bold">Authorization based encryption</h1>
+      <h1 class="text-xl font-bold text-foreground">Authorization based encryption</h1>
     </div>
 
     <form
@@ -54,10 +54,12 @@
       on:submit|preventDefault={() => (payload = encrypt(plaintext, Array.from(authorizedEmails)))}
     >
       <div class="space-y-2">
-        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plaintext">Ciphertext Envelope</Label>
+        <Label class="uppercase text-background-foreground tracking-wider text-sm" for="plaintext">
+          Ciphertext Envelope
+        </Label>
         <Textarea
           required
-          class="text-base border-2 border-gray-300 focus-visible:ring-0"
+          class="text-base border-2 border-muted text-foreground focus:ring-0 focus-visible:ring-0"
           id="plaintext"
           bind:value={plaintext}
           placeholder="The plaintext secret to encrypt"
@@ -65,7 +67,9 @@
       </div>
 
       <div class="space-y-2">
-        <Label for="email" class="uppercase text-gray-500 tracking-wider text-sm">Authorized Emails</Label>
+        <Label for="email" class="uppercase text-background-foreground tracking-wider text-sm">
+          Authorized Emails
+        </Label>
 
         <p class="text-xs flex items-center space-x-1 text-blue-500">
           <Info class="h-[12px] w-[12px] inline-block"></Info>
@@ -73,7 +77,7 @@
         </p>
         <Input
           id="email"
-          class="text-base border-2 border-gray-300 focus-visible:ring-0"
+          class="text-base border-2 border-muted text-foreground focus:ring-0 focus-visible:ring-0"
           placeholder="Recipient email address"
           type="email"
           required={authorizedEmails.size === 0}
@@ -111,15 +115,15 @@
       </div>
 
       <div class="pt-4">
-        <Button class="min-w-[140px] text-lg" type="submit">Encrypt</Button>
+        <Button class="min-w-[140px] text-lg font-bold" type="submit">Encrypt</Button>
       </div>
     </form>
   </div>
 
   {#if payload}
-    <div class="p-8 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+    <div class="p-8 border-2 border-background-foreground rounded-md space-y-6 bg-background">
       <div>
-        <h1 class="text-xl font-bold">Encrypted content</h1>
+        <h1 class="text-xl font-bold text-foreground">Encrypted content</h1>
       </div>
 
       {#await payload}
@@ -131,9 +135,11 @@
         {@const url = Cipherly.authUrl() + payload}
 
         <div class="space-y-2">
-          <Label for="payload" class="uppercase text-gray-500 tracking-wider text-sm">Ciphertext Envelope</Label>
+          <Label for="payload" class="uppercase text-background-foreground tracking-wider text-sm"
+            >Ciphertext Envelope</Label
+          >
           <Textarea
-            class="text-base border-2 border-gray-300 focus-visible:ring-0 disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
+            class="text-base border-2 border-muted focus-visible:ring-0 focus-visible:outline-none disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
             id="payload"
             disabled
             value={payload}
@@ -157,7 +163,7 @@
           </Button>
         </div>
       {:catch error}
-        <Alert.Root variant="destructive">
+        <Alert.Root variant="destructive" class="rounded space-y-2">
           <Alert.Title>Failed to Encrypt</Alert.Title>
           <Alert.Description>
             {error.message}

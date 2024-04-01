@@ -1,15 +1,16 @@
 <script lang="ts">
-  import avatar from "gradient-avatar";
-  export let user: App.Locals["user"];
-  export let size: number;
+  import type { HTMLAttributes, HTMLTextareaAttributes } from "svelte/elements";
+  import { cn } from "$lib/utils";
 
-  const userAvatar = (email: string) => avatar(email, size);
+  type $$Props = HTMLAttributes<HTMLHeadingElement> & {
+    user: App.Locals["user"];
+  };
+
+  let className: $$Props["class"] = undefined;
+  export { className as class };
+  export let user: $$Props["user"];
 </script>
 
-<div class="overflow-clip rounded-full">
-  {#if user.picture}
-    <img class={`object-cover h-[${size}px] w-[${size}px]`} src={user.picture} alt={user.email} />
-  {:else}
-    {@html userAvatar(user.email)}
-  {/if}
+<div class={cn("overflow-clip rounded-full", className)}>
+  <img class={`object-fit rounded-full`} src={user.picture} alt={user.email} referrerpolicy="no-referrer" />
 </div>

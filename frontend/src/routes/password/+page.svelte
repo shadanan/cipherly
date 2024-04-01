@@ -34,17 +34,19 @@
 </script>
 
 <div class="space-y-8">
-  <div class="p-8 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+  <div class="p-8 border-2 border-background-foreground rounded-md space-y-6 bg-background">
     <div>
-      <h1 class="text-xl font-bold">Password based decryption</h1>
+      <h1 class="text-xl font-bold text-foreground">Password based decryption</h1>
     </div>
 
     <form class="space-y-6" on:submit|preventDefault={() => (plainText = decrypt(payload, password))}>
       <div class="space-y-2">
-        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plainText">Ciphertext Envelope</Label>
+        <Label class="uppercase text-background-foreground tracking-wider text-sm" for="plainText"
+          >Ciphertext Envelope</Label
+        >
         <Textarea
           required
-          class="text-base border-2 border-gray-300 focus-visible:ring-0"
+          class="text-base border-2 border-muted text-foreground focus:ring-0 focus-visible:ring-0"
           id="payload"
           bind:value={payload}
           placeholder="The ciphertext payload to be decrypted"
@@ -52,9 +54,9 @@
       </div>
 
       <div class="space-y-2">
-        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plainText">Password</Label>
+        <Label class="uppercase text-background-foreground tracking-wider text-sm" for="plainText">Password</Label>
         <Input
-          class="text-base border-2 border-gray-300 focus-visible:ring-0"
+          class="text-base border-2 border-muted text-foreground focus:ring-0 focus-visible:ring-0"
           type="password"
           placeholder="The password to use for decryption"
           bind:value={password}
@@ -62,15 +64,15 @@
       </div>
 
       <div class="pt-4">
-        <Button class="min-w-[140px] text-lg" type="submit">Decrypt</Button>
+        <Button class="min-w-[140px] text-lg font-bold" type="submit">Decrypt</Button>
       </div>
     </form>
   </div>
 
   {#if plainText}
-    <div class="p-8 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+    <div class="p-8 border-2 border-background-foreground rounded-md space-y-6 bg-background">
       <div>
-        <h1 class="text-xl font-bold">Encrypted content</h1>
+        <h1 class="text-xl font-bold text-foreground">Encrypted content</h1>
       </div>
       {#await plainText}
         <div class="py-6 space-y-6">
@@ -79,9 +81,11 @@
         </div>
       {:then plainText}
         <div class="space-y-2">
-          <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plainText">Decrypted Plaintext</Label>
+          <Label class="uppercase text-background-foreground tracking-wider text-sm" for="plainText">
+            Decrypted Plaintext
+          </Label>
           <Textarea
-            class="text-base border-2 border-gray-300 focus-visible:ring-0 disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
+            class="text-base border-2 border-muted focus-visible:ring-0 focus-visible:outline-none disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
             id="plainText"
             disabled
             value={plainText}
@@ -96,7 +100,7 @@
           {/if}
         </Button>
       {:catch}
-        <Alert.Root variant="destructive" class="space-y-2">
+        <Alert.Root variant="destructive" class="rounded space-y-2">
           <Alert.Title>Failed to Decrypt</Alert.Title>
           <Alert.Description>Password is incorrect or ciphertext is invalid.</Alert.Description>
         </Alert.Root>

@@ -35,7 +35,7 @@
     "js-base64": "^3.7.7",
     "jwt-decode": "^4.0.0",
     "lucide-svelte": "^0.338.0",
-    "svelte-tags-input": "^6.0.0",
+    "mode-watcher": "^0.3.0",
     "tailwind-merge": "^2.2.1",
     "tailwind-variants": "^0.2.0"
   }

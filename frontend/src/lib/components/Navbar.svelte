@@ -13,7 +13,7 @@
   let showMenu = false;
 </script>
 
-<nav class="fixed z-30 w-full border-b border-gray-200 bg-white">
+<nav class="fixed z-30 w-full border-b border-gray-200 bg-background">
   <div class="flex h-14 items-center justify-between px-3 py-3 lg:px-5 lg:pl-3">
     <div class="ml-2 flex items-center justify-start">
       <a href="/" class="flex items-center space-x-1">
@@ -42,7 +42,7 @@
               }}
             >
               <span class="sr-only">Open user menu</span>
-              <div class="h-8 w-8 rounded-full bg-white">
+              <div class="h-8 w-8 rounded-full bg-background">
                 <Avatar {user} size={32} />
               </div>
             </button>
@@ -50,7 +50,7 @@
           <!-- Dropdown menu -->
           <div
             class={clsx(
-              "fixed right-5 top-9 z-50 my-4 list-none divide-y divide-gray-100 rounded border bg-white text-base shadow-lg",
+              "fixed right-5 top-9 z-50 my-4 list-none divide-y divide-gray-100 rounded border bg-background text-base shadow-lg",
               {
                 visible: showMenu,
                 invisible: !showMenu,

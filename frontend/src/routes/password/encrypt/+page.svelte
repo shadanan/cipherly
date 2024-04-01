@@ -43,17 +43,18 @@
 </script>
 
 <div class="space-y-8">
-  <div class="p-8 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+  <div class="p-8 border-2 border-background-foreground rounded-md space-y-6 bg-background">
     <div>
-      <h1 class="text-xl font-bold">Password based encryption</h1>
+      <h1 class="text-xl font-bold text-foreground">Password based encryption</h1>
     </div>
 
     <form class="space-y-6" on:submit|preventDefault={() => (envelope = encrypt(plainText, password))}>
       <div class="space-y-2">
-        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plainText">Plaintext</Label>
+        <Label class="uppercase text-background-foreground tracking-wider text-sm" for="plainText">Plaintext</Label
+        >
         <Textarea
           required
-          class="text-base border-2 border-gray-300 focus-visible:ring-0"
+          class="text-base border-2 border-muted text-foreground focus:ring-0 focus-visible:ring-0"
           id="plainText"
           bind:value={plainText}
           placeholder="The plainText secret to encrypt"
@@ -61,24 +62,24 @@
       </div>
 
       <div class="space-y-2">
-        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plainText">Password</Label>
+        <Label class="uppercase text-background-foreground tracking-wider text-sm" for="plainText">Password</Label>
         <Input
-          class="text-base border-2 border-gray-300 focus-visible:ring-0"
+          class="text-base border-2 border-muted text-foreground focus:ring-0 focus-visible:ring-0"
           placeholder="The password to use for encryption"
           bind:value={password}
         />
       </div>
 
       <div class="pt-4">
-        <Button class="min-w-[140px] text-lg" type="submit">Encrypt</Button>
+        <Button class="min-w-[140px] text-lg font-bold" type="submit">Encrypt</Button>
       </div>
     </form>
   </div>
 
   {#if envelope}
-    <div class="p-8 border-2 border-gray-300 rounded-md space-y-6 bg-white">
+    <div class="p-8 border-2 border-background-foreground rounded-md space-y-6 bg-card">
       <div>
-        <h1 class="text-xl font-bold">Encrypted content</h1>
+        <h1 class="text-xl font-bold text-foreground">Encrypted content</h1>
       </div>
 
       {#await envelope}
@@ -90,13 +91,15 @@
         {@const url = Cipherly.passwordUrl() + envelope}
 
         <div class="space-y-2">
-          <Label for="envelope" class="uppercase text-gray-500 tracking-wider text-sm">Ciphertext Envelope</Label>
+          <Label for="envelope" class="uppercase text-background-foreground tracking-wider text-sm">
+            Ciphertext Envelope
+          </Label>
           <Textarea
-            class="text-base border-2 border-gray-300 focus-visible:ring-0 disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
+            class="text-base border-2 border-muted  focus-visible:ring-none focus-visible:outline-none disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
             id="envelope"
             disabled
             value={envelope}
-            placeholder="The plainText secret to encrypt"
+            placeholder="The plain text secret to encrypt"
           />
         </div>
         <div class="pt-4 space-x-2">
@@ -121,7 +124,7 @@
           </Button>
         </div>
       {:catch error}
-        <Alert.Root variant="destructive" class="space-y-2">
+        <Alert.Root variant="destructive" class="rounded space-y-2">
           <Alert.Title>Failed to Encrypt</Alert.Title>
           <Alert.Description>
             {error.message}
