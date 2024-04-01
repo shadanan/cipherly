@@ -25,7 +25,7 @@
               item.href.startsWith($page.url.pathname)
               ? "border-primary border-b-4 text-primary"
               : "text-muted-foreground hover:text-foreground border-accent hover:border-muted-foreground",
-            item.disabled && "cursor-not-allowed opacity-80"
+            item.disabled && "cursor-not-allowed opacity-80",
           )}
           href={item.disabled ? "/" : item.href}
         >

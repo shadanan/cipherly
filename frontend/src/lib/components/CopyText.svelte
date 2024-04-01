@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Button } from "$lib/components/ui/button";
+
   let copied: boolean;
 
   export let label: string;
@@ -15,7 +16,12 @@
   }
 </script>
 
-<Button variant="secondary" class="min-w-[140px]" type="button" on:click={() => copyToClipboard(text)}>
+<Button
+  variant="secondary"
+  class="min-w-[140px]"
+  type="button"
+  on:click={() => copyToClipboard(text)}
+>
   {#if copied}
     Copied!
   {:else}

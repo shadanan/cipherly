@@ -1,6 +1,6 @@
 <script lang="ts">
-  import { page } from "$app/stores";
   import { cn } from "$lib/utils";
+  import { page } from "$app/stores";
 
   export let items: {
     href: string;
@@ -26,7 +26,7 @@
               $page.url.pathname == item.href
                 ? "text-foreground font-bold bg-secondary"
                 : "transparent text-muted-foreground",
-              item.disabled && "cursor-not-allowed opacity-80"
+              item.disabled && "cursor-not-allowed opacity-80",
             )}
           >
             <svelte:component this={item.icon} class="mr-2 h-4 w-4" />
