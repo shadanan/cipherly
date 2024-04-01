@@ -1,6 +1,5 @@
 <script lang="ts">
   import clsx from "clsx";
-  import { AlertCircle } from "lucide-svelte";
   export let title: string = "";
   export let description: string;
   export let type: "danger" | "success" | "warning" | "info";

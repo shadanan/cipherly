@@ -1,4 +1,5 @@
 import { fontFamily } from "tailwindcss/defaultTheme";
+
 const colors = require("tailwindcss/colors");
 
 /** @type {import('tailwindcss').Config} */
