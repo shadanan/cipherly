@@ -1,10 +1,8 @@
-import { Lock, KeyRound, UserRoundCheck, Unlock } from "lucide-svelte";
+import { Lock, KeyRound, Unlock, User } from "lucide-svelte";
 
 const config = {
   site: {
     name: "Cipherly",
-    description:
-      "Aute mollit ipsum enim aliquip consequat ad fugiat nostrud enim exercitation sunt commodo irure ullamco enim.",
     mainNav: [
       {
         title: "Password Encryption",
@@ -14,7 +12,7 @@ const config = {
       {
         title: "Auth Encryption",
         href: "/auth/encrypt",
-        icon: UserRoundCheck,
+        icon: User,
       },
     ],
     sidebarNav: [
