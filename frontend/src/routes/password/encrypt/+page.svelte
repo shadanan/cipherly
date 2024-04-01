@@ -13,18 +13,14 @@
   let copiedCipherText: boolean;
   let copiedDecryptUrl: boolean;
 
-  async function encrypt(plaintext: string, password: string): Promise<string> {
-    return new Promise(async (resolve, reject) => {
-      setTimeout(async () => {
-        const salt = Cipherly.generateSalt();
-        const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
+  async function encrypt(plainText: string, password: string): Promise<string> {
+    const salt = Cipherly.generateSalt();
+    const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
 
-        const iv = Cipherly.generateIv();
-        const ciphertext = await Cipherly.encrypt(Cipherly.encodeUtf8(plaintext), key, iv);
+    const iv = Cipherly.generateIv();
+    const cipherText = await Cipherly.encrypt(Cipherly.encodeUtf8(plainText), key, iv);
 
-        resolve(Cipherly.encodePasswordEnvelope({ salt, iv, ciphertext }));
-      }, 0);
-    });
+    return Cipherly.encodePasswordPayload({ salt, iv, cipherText });
   }
 
   function copyCipherText(envelope: string | null): void {
@@ -55,20 +51,20 @@
       </p>
     </div>
 
-    <form class="space-y-6" on:submit|preventDefault={() => (envelope = encrypt(plaintext, password))}>
+    <form class="space-y-6" on:submit|preventDefault={() => (envelope = encrypt(plainText, password))}>
       <div class="space-y-2">
-        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plaintext">Plaintext</Label>
+        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plainText">Plaintext</Label>
         <Textarea
           required
           class="text-base border-2 border-gray-300 focus-visible:ring-0"
-          id="plaintext"
-          bind:value={plaintext}
-          placeholder="The plaintext secret to encrypt"
+          id="plainText"
+          bind:value={plainText}
+          placeholder="The plainText secret to encrypt"
         />
       </div>
 
       <div class="space-y-2">
-        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plaintext">Password</Label>
+        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plainText">Password</Label>
         <Input
           class="text-base border-2 border-gray-300 focus-visible:ring-0"
           placeholder="The password to use for encryption"
@@ -103,7 +99,7 @@
             id="envelope"
             disabled
             value={envelope}
-            placeholder="The plaintext secret to encrypt"
+            placeholder="The plainText secret to encrypt"
           />
         </div>
         <div class="pt-4 space-x-2">

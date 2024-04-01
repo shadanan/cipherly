@@ -9,9 +9,8 @@
 
   let payload = "";
   let password = "";
-  let plaintext: Promise<string> | null = null;
-  let copiedPlaintext: boolean;
   let plainText: Promise<string> | null = null;
+  let copiedPlaintext: boolean;
 
   if (location.hash) {
     payload = location.hash.slice(1);
@@ -43,20 +42,20 @@
       </p>
     </div>
 
-    <form class="space-y-6" on:submit|preventDefault={() => (plaintext = decrypt(envelope, password))}>
+    <form class="space-y-6" on:submit|preventDefault={() => (plainText = decrypt(payload, password))}>
       <div class="space-y-2">
-        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plaintext">Ciphertext Envelope</Label>
+        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plainText">Ciphertext Envelope</Label>
         <Textarea
           required
           class="text-base border-2 border-gray-300 focus-visible:ring-0"
-          id="envelope"
-          bind:value={envelope}
-          placeholder="The ciphertext envelope to be decrypted"
+          id="payload"
+          bind:value={payload}
+          placeholder="The ciphertext payload to be decrypted"
         />
       </div>
 
       <div class="space-y-2">
-        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plaintext">Password</Label>
+        <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plainText">Password</Label>
         <Input
           class="text-base border-2 border-gray-300 focus-visible:ring-0"
           type="password"
@@ -71,28 +70,28 @@
     </form>
   </div>
 
-  {#if plaintext}
+  {#if plainText}
     <div class="p-10 border-2 border-gray-300 rounded-md space-y-6 bg-white">
       <div>
         <h1 class="text-xl font-bold">Encrypted content</h1>
       </div>
-      {#await plaintext}
+      {#await plainText}
         <div class="py-6 space-y-6">
           <Skeleton class="h-20 w-full" />
           <Skeleton class="h-10 w-full" />
         </div>
-      {:then plaintext}
+      {:then plainText}
         <div class="space-y-2">
-          <Label class="uppercase text-gray-500 tracking-wider text-sm" for="envelope">Decrypted Plaintext</Label>
+          <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plainText">Decrypted Plaintext</Label>
           <Textarea
             class="text-base border-2 border-gray-300 focus-visible:ring-0 disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
-            id="plaintext"
+            id="plainText"
             disabled
-            value={plaintext}
-            placeholder="The decrypted plaintext"
+            value={plainText}
+            placeholder="The decrypted plainText"
           />
         </div>
-        <Button variant="secondary" class="min-w-[140px]" type="button" on:click={() => copyPlaintext(plaintext)}>
+        <Button variant="secondary" class="min-w-[140px]" type="button" on:click={() => copyPlaintext(plainText)}>
           {#if copiedPlaintext}
             Copied!
           {:else}

@@ -12,15 +12,15 @@
   let authorizedEmails = new Set<string>([]);
   let email = "";
   let plaintext = "";
-  let envelope: Promise<string> | null = null;
+  let payload: Promise<string> | null = null;
   let copiedCipherText: boolean;
   let copiedDecryptUrl: boolean;
 
-  async function encrypt(plaintext: string, emails: string[]): Promise<string> {
+  async function encrypt(plainText: string, emails: string[]): Promise<string> {
     const dek = await Cipherly.generateKey();
     const iv = Cipherly.generateIv();
     const cipherText = await Cipherly.encrypt(Cipherly.encodeUtf8(plainText), dek, iv);
-    const sealedEnvelope = await Cipherly.seal({ dek, iv, emails: [email] });
+    const sealedEnvelope = await Cipherly.seal({ dek, iv, emails });
     return Cipherly.encodeAuthPayload({ sealedEnvelope, cipherText });
   }
 
@@ -54,7 +54,7 @@
 
     <form
       class="space-y-6"
-      on:submit|preventDefault={() => (envelope = encrypt(plaintext, Array.from(authorizedEmails)))}
+      on:submit|preventDefault={() => (payload = encrypt(plaintext, Array.from(authorizedEmails)))}
     >
       <div class="space-y-2">
         <Label class="uppercase text-gray-500 tracking-wider text-sm" for="plaintext">Ciphertext Envelope</Label>
@@ -119,37 +119,32 @@
     </form>
   </div>
 
-  {#if envelope}
+  {#if payload}
     <div class="p-10 border-2 border-gray-300 rounded-md space-y-6 bg-white">
       <div>
         <h1 class="text-xl font-bold">Encrypted content</h1>
       </div>
 
-      {#await envelope}
+      {#await payload}
         <div class="py-6 space-y-6">
           <Skeleton class="h-20 w-full" />
           <Skeleton class="h-10 w-full" />
         </div>
-      {:then envelope}
-        {@const url = Cipherly.authUrl() + envelope}
+      {:then payload}
+        {@const url = Cipherly.authUrl() + payload}
 
         <div class="space-y-2">
-          <Label for="envelope" class="uppercase text-gray-500 tracking-wider text-sm">Ciphertext Envelope</Label>
+          <Label for="payload" class="uppercase text-gray-500 tracking-wider text-sm">Ciphertext Envelope</Label>
           <Textarea
             class="text-base border-2 border-gray-300 focus-visible:ring-0 disabled:cursor-text disabled:text-green-600 disabled:opacity-1"
-            id="envelope"
+            id="payload"
             disabled
-            value={envelope}
+            value={payload}
           />
         </div>
 
         <div class="pt-4 space-x-2">
-          <Button
-            class="min-w-[140px]"
-            variant="secondary"
-            type="button"
-            on:click={() => copyCipherText(envelope)}
-          >
+          <Button class="min-w-[140px]" variant="secondary" type="button" on:click={() => copyCipherText(payload)}>
             {#if copiedCipherText}
               Copied!
             {:else}
