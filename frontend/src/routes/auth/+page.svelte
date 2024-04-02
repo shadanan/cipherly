@@ -48,7 +48,9 @@
     </div>
 
     <div class={$user === null ? "" : "hidden"}>
-      <div id="login-button"><Skeleton class="h-10 w-full" /></div>
+      <div id="login-button" class="w-[200px]" style="color-scheme:light">
+        <Skeleton class="h-10" />
+      </div>
     </div>
 
     {#if $user !== null}
