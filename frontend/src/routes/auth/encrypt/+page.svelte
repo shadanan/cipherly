@@ -26,6 +26,14 @@
     const sealedEnvelope = await Cipherly.seal({ dek, iv, emails });
     return Cipherly.encodeAuthPayload({ sealedEnvelope, cipherText });
   }
+
+  function appendAndClearEmail() {
+    if (email === "") {
+      return;
+    }
+    authorizedEmails = new Set([...authorizedEmails, email]);
+    email = "";
+  }
 </script>
 
 <div class="space-y-8">
@@ -40,8 +48,10 @@
 
     <form
       class="space-y-6"
-      on:submit|preventDefault={() =>
-        (payload = encrypt(plaintext, Array.from(authorizedEmails)))}
+      on:submit|preventDefault={() => {
+        appendAndClearEmail();
+        payload = encrypt(plaintext, Array.from(authorizedEmails));
+      }}
     >
       <div class="space-y-2">
         <Label
@@ -80,8 +90,7 @@
           bind:value={email}
           on:keydown={(e) => {
             if (e.key === "Enter") {
-              authorizedEmails = new Set([...authorizedEmails, email]);
-              email = "";
+              appendAndClearEmail();
               e.preventDefault();
             }
           }}
@@ -112,9 +121,9 @@
       </div>
 
       <div class="pt-4">
-        <Button class="min-w-[140px] text-lg font-bold" type="submit"
-          >Encrypt</Button
-        >
+        <Button class="min-w-[140px] text-lg font-bold" type="submit">
+          Encrypt
+        </Button>
       </div>
     </form>
   </div>
