@@ -13,18 +13,18 @@
 </script>
 
 {#if items.length && $page.url.pathname !== "/"}
-  <nav class="relative w-full flex justify-center py-1 rounded-md my-2">
+  <nav class="relative my-2 flex w-full justify-center rounded-md py-1">
     {#each items as item}
       {#if $page.url.pathname.startsWith(item.parent) && item.href}
         <a
           href={item.disabled ? "/" : item.href}
-          class="flex-1 flex justify-center rounded-md"
+          class="flex flex-1 justify-center rounded-md"
         >
           <div
             class={cn(
-              " w-full flex justify-center hover:text-accent-foreground items-center rounded-md px-2 py-3 text-base font-medium",
+              " flex w-full items-center justify-center rounded-md px-2 py-3 text-base font-medium hover:text-accent-foreground",
               $page.url.pathname == item.href
-                ? "text-foreground font-bold bg-secondary"
+                ? "bg-secondary font-bold text-foreground"
                 : "transparent text-muted-foreground",
               item.disabled && "cursor-not-allowed opacity-80",
             )}

@@ -2,8 +2,8 @@
   import logo from "$lib/assets/cipherly-white.png";
 </script>
 
-<div class="container px-5 mx-auto relative">
-  <div class="flex flex-col text-center w-full mb-8 items-center space-y-4">
+<div class="container relative mx-auto px-5">
+  <div class="mb-8 flex w-full flex-col items-center space-y-4 text-center">
     <a href="/">
       <div class="flex items-center space-x-2">
         <img alt="The project logo" src={logo} class="w-10" />
