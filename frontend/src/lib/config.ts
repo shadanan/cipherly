@@ -41,9 +41,14 @@ const config = {
         icon: Unlock,
       },
     ],
-  },
-  routes: {
-    LOGIN: "/login",
+    videos: [
+      {
+        href: "https://youtu.be/oKCNhjF9k8c?si=GGmNJuPKmTsr3m-o",
+        title:
+          "Cipherly: Encrypting a Secret with a Password directly in the Browser",
+        thumbnail: "https://i3.ytimg.com/vi/oKCNhjF9k8c/maxresdefault.jpg", // use https://www.get-youtube-thumbnail.com/
+      },
+    ],
   },
 };
 
