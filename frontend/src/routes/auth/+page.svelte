@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { login, logout, token, user } from "$lib/auth";
+  import { logout, renderLoginButton, token, user } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
   import Avatar from "$lib/components/Avatar.svelte";
   import CopyText from "$lib/components/CopyText.svelte";
@@ -9,6 +9,11 @@
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
+  import { onMount } from "svelte";
+
+  onMount(() => {
+    renderLoginButton(document.getElementById("login-button"));
+  });
 
   let payload = "";
   let plainText: Promise<string> | null = null;
@@ -42,19 +47,13 @@
       </h1>
     </div>
 
-    {#if $user === null}
-      <div class="pt-4">
-        <Button
-          class="flex min-w-[140px] space-x-2"
-          variant="secondary"
-          type="button"
-          on:click={login}
-        >
-          <Google class="w-4" />
-          <span>Login to Decrypt</span>
-        </Button>
+    <div class={$user === null ? "" : "hidden"}>
+      <div id="login-button" class="w-[200px]" style="color-scheme:light">
+        <Skeleton class="h-10" />
       </div>
-    {:else}
+    </div>
+
+    {#if $user !== null}
       <div class="flex items-center space-x-4">
         <div
           class="flex items-center space-x-4 rounded-3xl bg-muted px-4 py-2 text-muted-foreground"

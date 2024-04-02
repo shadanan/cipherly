@@ -11,9 +11,14 @@ export type User = {
 
 const CREDENTIAL_KEY = "credential";
 
+let googleProviderLoaded = false;
+
 export const googleProvider = new GoogleOAuthProvider({
   clientId:
     "981002175662-g8jr2n89bptsn8n9ds1fn5edfheojr7i.apps.googleusercontent.com",
+  onScriptLoadSuccess: () => {
+    googleProviderLoaded = true;
+  },
 });
 
 export const token = writable<string | null>(
@@ -26,20 +31,33 @@ export function logout() {
   sessionStorage.removeItem(CREDENTIAL_KEY);
 }
 
-export const login = googleProvider.useGoogleOneTapLogin({
-  cancel_on_tap_outside: true,
-  onSuccess: (res) => {
-    if (!res.credential) {
-      console.error("Credential is missing", res);
-      return;
-    }
-    token.set(res.credential);
-    sessionStorage.setItem(CREDENTIAL_KEY, res.credential);
-  },
-  onError: () => {
-    console.error("Error useGoogleOneTapLogin");
-  },
-});
+export const renderLoginButton = (element: HTMLElement | null) => {
+  if (!element) {
+    return;
+  }
+  if (!googleProviderLoaded) {
+    setTimeout(() => renderLoginButton(element), 10);
+    return;
+  }
+  googleProvider.useRenderButton({
+    element,
+    use_fedcm_for_prompt: true,
+    onSuccess: (res) => {
+      if (!res.credential) {
+        console.error("Credential is missing", res);
+        return;
+      }
+      token.set(res.credential);
+      sessionStorage.setItem(CREDENTIAL_KEY, res.credential);
+    },
+    onError: () => {
+      console.error("Error useGoogleOneTapLogin");
+    },
+    promptMomentNotification: (notification) => {
+      console.log("promptMomentNotification", notification);
+    },
+  })();
+};
 
 export const user = derived(token, ($jwt) => {
   if ($jwt === null) {
