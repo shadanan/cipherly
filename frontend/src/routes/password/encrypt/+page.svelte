@@ -10,7 +10,7 @@
 
   let plainText = "";
   let password = "";
-  let envelope: Promise<string> | null = null;
+  let payload: Promise<string> | null = null;
 
   async function encrypt(plainText: string, password: string): Promise<string> {
     const salt = Cipherly.generateSalt();
@@ -33,13 +33,13 @@
   >
     <div>
       <h1 class="text-xl font-bold text-foreground">
-        Password based encryption
+        Password Based Encryption
       </h1>
     </div>
 
     <form
       class="space-y-6"
-      on:submit|preventDefault={() => (envelope = encrypt(plainText, password))}
+      on:submit|preventDefault={() => (payload = encrypt(plainText, password))}
     >
       <div class="space-y-2">
         <Label
@@ -58,9 +58,10 @@
       <div class="space-y-2">
         <Label
           class="text-background-foreground text-sm uppercase tracking-wider"
-          for="plainText">Password</Label
+          for="password">Password</Label
         >
         <Input
+          id="password"
           class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
           placeholder="The password to use for encryption"
           bind:value={password}
@@ -68,47 +69,44 @@
       </div>
 
       <div class="pt-4">
-        <Button class="min-w-[140px] text-lg font-bold" type="submit"
-          >Encrypt</Button
-        >
+        <Button class="min-w-[140px] text-lg font-bold" type="submit">
+          Encrypt
+        </Button>
       </div>
     </form>
   </div>
 
-  {#if envelope}
+  {#if payload}
     <div
       class="border-background-foreground space-y-6 rounded-md border-2 bg-card p-8"
     >
       <div>
-        <h1 class="text-xl font-bold text-foreground">Encrypted content</h1>
+        <h1 class="text-xl font-bold text-foreground">Encrypted Content</h1>
       </div>
 
-      {#await envelope}
+      {#await payload}
         <div class="space-y-6 py-6">
           <Skeleton class="h-20 w-full" />
           <Skeleton class="h-10 w-full" />
         </div>
-      {:then envelope}
-        {@const url = Cipherly.passwordUrl() + envelope}
-
+      {:then payload}
         <div class="space-y-2">
           <Label
-            for="envelope"
+            for="payload"
             class="text-background-foreground text-sm uppercase tracking-wider"
           >
-            Ciphertext Envelope
+            Ciphertext Payload
           </Label>
           <Textarea
             class="focus-visible:ring-none disabled:opacity-1 border-2  border-muted text-base focus-visible:outline-none disabled:cursor-text disabled:text-green-600"
-            id="envelope"
+            id="payload"
             disabled
-            value={envelope}
+            value={payload}
             placeholder="The plain text secret to encrypt"
           />
         </div>
         <div class="space-x-2 pt-4">
-          <CopyText label="Decrypt CipherText" text={envelope} />
-          <CopyText label="Decrypt URL" text={url} />
+          <CopyText label="Ciphertext" text={payload} />
         </div>
       {:catch error}
         <Alert.Root variant="destructive" class="space-y-2 rounded">
