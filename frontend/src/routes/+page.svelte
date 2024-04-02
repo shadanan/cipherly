@@ -6,20 +6,15 @@
 <section class="space-y-10 py-4 text-lg md:py-10">
   <div class="space-y-4">
     <h1 class="pb-1 text-3xl font-bold">What is Cipherly?</h1>
-    <p>
-      Cipherly is a browser-based encryption tool for password and auth based
-      encryption/decryption.
-    </p>
+    <p>Cipherly is a browser-based encryption tool for sharing secrets.</p>
     <p>
       It uses the browser's built-in <a
         target="_blank"
         href="https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto"
         class="text-primary underline underline-offset-4">SubtleCrypto</a
-      > library to provide encryption and decryption of text using a password. The
-      password is never sent to the server, and the encryption and decryption is
-      done entirely in the browser.
+      > library to encrypt and decrypt the secret without ever sending the secret
+      to the server.
     </p>
-    <p>This tool is a work in progress.</p>
   </div>
 
   <div class="space-y-4">
@@ -41,7 +36,7 @@
           referrerpolicy="no-referrer"
         >
           <div
-            class="overflow-hidden rounded border border-border shadow-sm hover:shadow"
+            class="border-border overflow-hidden rounded border shadow-sm hover:shadow"
           >
             <img class="object-cover" src={video.thumbnail} alt="" srcset="" />
             <div class="flex items-center space-x-4 px-4">
