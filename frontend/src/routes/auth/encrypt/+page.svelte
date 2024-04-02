@@ -12,7 +12,7 @@
 
   let authorizedEmails = new Set<string>([]);
   let email = "";
-  let plaintext = "";
+  let plainText = "";
   let payload: Promise<string> | null = null;
 
   async function encrypt(plainText: string, emails: string[]): Promise<string> {
@@ -42,7 +42,7 @@
   >
     <div>
       <h1 class="text-xl font-bold text-foreground">
-        Authorization based encryption
+        Authorization Based Encryption
       </h1>
     </div>
 
@@ -50,21 +50,21 @@
       class="space-y-6"
       on:submit|preventDefault={() => {
         appendAndClearEmail();
-        payload = encrypt(plaintext, Array.from(authorizedEmails));
+        payload = encrypt(plainText, Array.from(authorizedEmails));
       }}
     >
       <div class="space-y-2">
         <Label
           class="text-background-foreground text-sm uppercase tracking-wider"
-          for="plaintext"
+          for="plainText"
         >
-          Ciphertext Envelope
+          Plaintext
         </Label>
         <Textarea
           required
           class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-          id="plaintext"
-          bind:value={plaintext}
+          id="plainText"
+          bind:value={plainText}
           placeholder="The plaintext secret to encrypt"
         />
       </div>
@@ -133,7 +133,7 @@
       class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
     >
       <div>
-        <h1 class="text-xl font-bold text-foreground">Encrypted content</h1>
+        <h1 class="text-xl font-bold text-foreground">Encrypted Content</h1>
       </div>
 
       {#await payload}
@@ -142,14 +142,13 @@
           <Skeleton class="h-10 w-full" />
         </div>
       {:then payload}
-        {@const url = Cipherly.authUrl() + payload}
-
         <div class="space-y-2">
           <Label
             for="payload"
             class="text-background-foreground text-sm uppercase tracking-wider"
-            >Ciphertext Envelope</Label
           >
+            Ciphertext Payload
+          </Label>
           <Textarea
             class="disabled:opacity-1 border-2 border-muted text-base focus-visible:outline-none focus-visible:ring-0 disabled:cursor-text disabled:text-green-600"
             id="payload"
@@ -160,7 +159,6 @@
 
         <div class="space-x-2 pt-4">
           <CopyText label="Ciphertext" text={payload} />
-          <CopyText label="Decrypt URL" text={url} />
         </div>
       {:catch error}
         <Alert.Root variant="destructive" class="space-y-2 rounded">

@@ -13,7 +13,7 @@
   let plainText: Promise<string> | null = null;
 
   if (location.hash) {
-    payload = location.hash.slice(1);
+    payload = location.href;
   }
 
   async function decrypt(payload: string, password: string): Promise<string> {
@@ -30,7 +30,7 @@
   >
     <div>
       <h1 class="text-xl font-bold text-foreground">
-        Password based decryption
+        Password Based Decryption
       </h1>
     </div>
 
@@ -41,12 +41,12 @@
       <div class="space-y-2">
         <Label
           class="text-background-foreground text-sm uppercase tracking-wider"
-          for="plainText">Ciphertext Envelope</Label
+          for="payload">Ciphertext Payload</Label
         >
         <Textarea
+          id="payload"
           required
           class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-          id="payload"
           bind:value={payload}
           placeholder="The ciphertext payload to be decrypted"
         />
@@ -55,9 +55,10 @@
       <div class="space-y-2">
         <Label
           class="text-background-foreground text-sm uppercase tracking-wider"
-          for="plainText">Password</Label
+          for="password">Password</Label
         >
         <Input
+          id="password"
           class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
           type="password"
           placeholder="The password to use for decryption"
@@ -66,9 +67,9 @@
       </div>
 
       <div class="pt-4">
-        <Button class="min-w-[140px] text-lg font-bold" type="submit"
-          >Decrypt</Button
-        >
+        <Button class="min-w-[140px] text-lg font-bold" type="submit">
+          Decrypt
+        </Button>
       </div>
     </form>
   </div>
@@ -78,7 +79,7 @@
       class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
     >
       <div>
-        <h1 class="text-xl font-bold text-foreground">Encrypted content</h1>
+        <h1 class="text-xl font-bold text-foreground">Decrypted Content</h1>
       </div>
       {#await plainText}
         <div class="space-y-6 py-6">
@@ -98,16 +99,16 @@
             id="plainText"
             disabled
             value={plainText}
-            placeholder="The decrypted plainText"
+            placeholder="The decrypted plaintext"
           />
         </div>
-        <CopyText label="Plain text" text={plainText} />
+        <CopyText label="Plaintext" text={plainText} />
       {:catch}
         <Alert.Root variant="destructive" class="space-y-2 rounded">
           <Alert.Title>Failed to Decrypt</Alert.Title>
-          <Alert.Description
-            >Password is incorrect or ciphertext is invalid.</Alert.Description
-          >
+          <Alert.Description>
+            Password is incorrect or ciphertext is invalid.
+          </Alert.Description>
         </Alert.Root>
       {/await}
     </div>

@@ -44,6 +44,18 @@ export function generateIv(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(12));
 }
 
+function cipherlyHost(): string {
+  return `${location.protocol}//${location.host}`;
+}
+
+function extractHash(data: string): string {
+  const hashPos = data.indexOf("#");
+  if (hashPos !== -1) {
+    return data.slice(hashPos + 1);
+  }
+  return data;
+}
+
 type PasswordPayload = {
   salt: Uint8Array;
   iv: Uint8Array;
@@ -51,15 +63,11 @@ type PasswordPayload = {
 };
 
 export function encodePasswordPayload(payload: PasswordPayload): string {
-  return encodeMessagePack(payload);
+  return `${cipherlyHost()}/password/#${encodeMessagePack(payload)}`;
 }
 
-export function decodePasswordPayload(hash: string): PasswordPayload {
-  return decodeMessagePack(hash) as PasswordPayload;
-}
-
-export function passwordUrl(): string {
-  return `${location.protocol}//${location.host}/password/#`;
+export function decodePasswordPayload(data: string): PasswordPayload {
+  return decodeMessagePack(extractHash(data)) as PasswordPayload;
 }
 
 export async function deriveKey(
@@ -114,15 +122,11 @@ type AuthPayload = {
 };
 
 export function encodeAuthPayload(payload: AuthPayload): string {
-  return encodeMessagePack(payload);
+  return `${cipherlyHost()}/auth/#${encodeMessagePack(payload)}`;
 }
 
-export function decodeAuthPayload(hash: string): AuthPayload {
-  return decodeMessagePack(hash) as AuthPayload;
-}
-
-export function authUrl(): string {
-  return `${location.protocol}//${location.host}/auth/#`;
+export function decodeAuthPayload(data: string): AuthPayload {
+  return decodeMessagePack(extractHash(data)) as AuthPayload;
 }
 
 type Envelope = {
