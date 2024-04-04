@@ -19,7 +19,7 @@
   let plainText: Promise<string> | null = null;
 
   if (location.hash) {
-    payload = location.hash.slice(1);
+    payload = location.href;
   }
 
   async function decrypt(payload: string): Promise<string> {
@@ -43,7 +43,7 @@
   >
     <div>
       <h1 class="text-xl font-bold text-foreground">
-        Authorization based decryption
+        Authorization Based Decryption
       </h1>
     </div>
 
@@ -74,7 +74,7 @@
         <div class="space-y-2">
           <Label
             class="text-background-foreground text-sm uppercase tracking-wider"
-            for="plainText">Ciphertext Envelope</Label
+            for="payload">Ciphertext Payload</Label
           >
           <Textarea
             required
@@ -98,7 +98,7 @@
       class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
     >
       <div>
-        <h1 class="text-xl font-bold text-foreground">Encrypted content</h1>
+        <h1 class="text-xl font-bold text-foreground">Decrypted Content</h1>
       </div>
       {#await plainText}
         <div class="space-y-6 py-6">
@@ -118,22 +118,20 @@
             id="plainText"
             disabled
             value={plainText}
-            placeholder="The decrypted plainText"
+            placeholder="The decrypted plaintext"
           />
         </div>
-        <CopyText label="PlainText" text={plainText} />
+        <CopyText label="Plaintext" text={plainText} />
       {:catch err}
         <Alert.Root variant="destructive" class="space-y-2 rounded">
           {#if err.code === 401}
             <Alert.Title>Unauthorized</Alert.Title>
-            <Alert.Description
-              >You are not authorized to decrypt this secret.</Alert.Description
-            >
+            <Alert.Description>
+              You are not authorized to decrypt this secret.
+            </Alert.Description>
           {:else}
             <Alert.Title>Failed to Decrypt</Alert.Title>
-            <Alert.Description
-              >Password is incorrect or ciphertext is invalid.</Alert.Description
-            >
+            <Alert.Description>Ciphertext is invalid.</Alert.Description>
           {/if}
         </Alert.Root>
       {/await}
