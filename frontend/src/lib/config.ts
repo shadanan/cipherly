@@ -41,9 +41,17 @@ const config = {
         icon: Unlock,
       },
     ],
-  },
-  routes: {
-    LOGIN: "/login",
+    youTubeVideos: [
+      {
+        id: "oKCNhjF9k8c",
+        title: "Encrypting a Secret with a Password directly in the Browser",
+      },
+      {
+        id: "AsxSR4mtCuM",
+        title:
+          "Encrypting a Secret that can only be Decrypted by the Authorized User",
+      },
+    ],
   },
 };
 

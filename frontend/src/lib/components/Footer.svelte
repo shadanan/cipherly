@@ -1,7 +1,7 @@
-<div class="my-12 text-gray-400 text-sm text-center">
+<div class="my-12 text-center text-sm text-gray-400">
   Made with ♥ by
   <a
-    class="underline-offset-4 underline"
+    class="underline underline-offset-4"
     href="https://www.youtube.com/@friendlytl">The FriendlyTL</a
   >
 </div>
