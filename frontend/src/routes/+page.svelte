@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Youtube from "$/lib/components/icons/Youtube.svelte";
+  import youTubeLogo from "$lib/assets/youtube.svg";
   import config from "$lib/config";
 </script>
 
@@ -28,19 +28,21 @@
       </a>
     </p>
     <div class="flex flex-wrap">
-      {#each config.site.videos as video}
+      {#each config.site.youTubeVideos as video}
+        {@const videoUrl = `https://youtu.be/${video.id}`}
+        {@const thumbnail = `https://i3.ytimg.com/vi/${video.id}/maxresdefault.jpg`}
         <a
           class="mb-6 mr-6 w-full sm:w-auto sm:max-w-[16rem]"
           target="_blank"
-          href={video.href}
+          href={videoUrl}
           referrerpolicy="no-referrer"
         >
           <div
             class="border-border overflow-hidden rounded border shadow-sm hover:shadow"
           >
-            <img class="object-cover" src={video.thumbnail} alt="" srcset="" />
+            <img class="object-cover" src={thumbnail} alt="" srcset="" />
             <div class="flex items-center space-x-4 px-4">
-              <Youtube class="h-16 w-16" />
+              <img src={youTubeLogo} alt="YouTube" class="w-6 h-6" />
               <p class="text-sm font-medium">
                 {video.title}
               </p>

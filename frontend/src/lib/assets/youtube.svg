@@ -1,14 +1,4 @@
-<script lang="ts">
-  import type { HTMLTextareaAttributes } from "svelte/elements";
-
-  type $$Props = HTMLTextareaAttributes;
-
-  let className: $$Props["class"] = undefined;
-  export { className as class };
-</script>
-
 <svg
-  class={className}
   viewBox="0 0 28.57 20"
   preserveAspectRatio="xMidYMid meet"
   xmlns="http://www.w3.org/2000/svg"

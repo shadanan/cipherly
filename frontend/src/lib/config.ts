@@ -41,12 +41,14 @@ const config = {
         icon: Unlock,
       },
     ],
-    videos: [
+    youTubeVideos: [
       {
-        href: "https://youtu.be/oKCNhjF9k8c?si=GGmNJuPKmTsr3m-o",
-        title:
-          "Cipherly: Encrypting a Secret with a Password directly in the Browser",
-        thumbnail: "https://i3.ytimg.com/vi/oKCNhjF9k8c/maxresdefault.jpg", // use https://www.get-youtube-thumbnail.com/
+        id: "oKCNhjF9k8c",
+        title: "Encrypting a Secret with a Password directly in the Browser",
+      },
+      {
+        id: "AsxSR4mtCuM",
+        title: "Encrypting a Secret that can only be Decrypted by the Authorized User",
       },
     ],
   },

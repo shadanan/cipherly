@@ -1,9 +1,9 @@
 <script lang="ts">
+  import googleLogo from "$lib/assets/google.svg";
   import { logout, renderLoginButton, token, user } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
   import Avatar from "$lib/components/Avatar.svelte";
   import CopyText from "$lib/components/CopyText.svelte";
-  import Google from "$lib/components/icons/Google.svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
@@ -58,7 +58,7 @@
         <div
           class="flex items-center space-x-4 rounded-3xl bg-muted px-4 py-2 text-muted-foreground"
         >
-          <Google class="h-4 w-4" />
+          <img src={googleLogo} alt="Google" class="h-4 w-4" />
           <p>
             Logged in as {$user?.name}
           </p>
