@@ -48,7 +48,8 @@ const config = {
       },
       {
         id: "AsxSR4mtCuM",
-        title: "Encrypting a Secret that can only be Decrypted by the Authorized User",
+        title:
+          "Encrypting a Secret that can only be Decrypted by the Authorized User",
       },
     ],
   },
