@@ -3,6 +3,9 @@ import { KeyRound, Lock, Unlock, User } from "lucide-svelte";
 const config = {
   site: {
     name: "Cipherly",
+    description:
+      "Cipherly is a browser-based encryption tool for sharing secrets",
+    youTubeChannelUrl: "https://www.youtube.com/@FriendlyTL",
     primaryNavItems: [
       {
         title: "Password Encryption",
