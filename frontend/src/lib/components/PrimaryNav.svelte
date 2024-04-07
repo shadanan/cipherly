@@ -6,7 +6,6 @@
     href: string;
     title: string;
     disabled?: boolean;
-    soon?: boolean;
     icon: ConstructorOfATypedSvelteComponent;
   }[];
 </script>
