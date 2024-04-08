@@ -17,7 +17,11 @@
   }
 
   async function decrypt(payload: string, password: string): Promise<string> {
-    const { salt, iv, cipherText } = Cipherly.decodePasswordPayload(payload);
+    const {
+      s: salt,
+      iv: iv,
+      ct: cipherText,
+    } = Cipherly.decodePasswordPayload(payload);
     const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
     const plainText = await Cipherly.decrypt(cipherText, key, iv);
     return Cipherly.decodeUtf8(plainText);

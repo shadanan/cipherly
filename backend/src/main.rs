@@ -15,12 +15,13 @@ mod google;
 #[derive(Debug, Serialize, Deserialize)]
 struct Envelope {
     dek: String,
-    iv: String,
     emails: Vec<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 struct SealedEnvelope {
+    kid: String,
+    nonce: String,
     data: String,
 }
 
@@ -31,10 +32,10 @@ fn seal(envelope: Json<Envelope>, kek: &State<Aes256Gcm>) -> Result<Json<SealedE
     let ciphertext = kek
         .encrypt(&nonce, buf.as_slice())
         .map_err(|_| Status::InternalServerError)?;
-    let data =
-        to_vec(&(nonce.to_vec(), ciphertext.to_vec())).map_err(|_| Status::InternalServerError)?;
     Ok(Json(SealedEnvelope {
-        data: BASE64_URL_SAFE_NO_PAD.encode(data),
+        kid: "v1".into(),
+        nonce: BASE64_URL_SAFE_NO_PAD.encode(nonce.as_slice()),
+        data: BASE64_URL_SAFE_NO_PAD.encode(ciphertext.as_slice()),
     }))
 }
 
@@ -44,11 +45,15 @@ fn unseal(
     kek: &State<Aes256Gcm>,
     claims: google::Claims,
 ) -> Result<Json<Envelope>, Status> {
-    let data = BASE64_URL_SAFE_NO_PAD
+    if sealed_envelope.kid != "v1" {
+        return Err(Status::Unauthorized);
+    }
+    let nonce = BASE64_URL_SAFE_NO_PAD
+        .decode(&sealed_envelope.nonce)
+        .map_err(|_| Status::Unauthorized)?;
+    let ciphertext = BASE64_URL_SAFE_NO_PAD
         .decode(&sealed_envelope.data)
         .map_err(|_| Status::Unauthorized)?;
-    let (nonce, ciphertext): (Vec<u8>, Vec<u8>) =
-        from_slice(&data).map_err(|_| Status::Unauthorized)?;
     let plaintext = kek
         .decrypt(nonce.as_slice().into(), ciphertext.as_slice())
         .map_err(|_| Status::Unauthorized)?;
@@ -87,7 +92,8 @@ mod tests {
     use rocket::local::blocking::Client;
 
     const TEST_KEK: &str = "jRg36ErQ6FLcc7nZgngOpjJnJLGwA3xaMy0yx1pxJrI";
-    const ALICE_ENVELOPE: &str = r#"{"dek":"gVwG8pMMMtdq6mS0OW19Kn7XwvdUcFJpkYN8cEnwnvs","iv":"9XfCog6Jp3MRgD71","emails":["alice@email.com"]}"#;
+    const ALICE_ENVELOPE: &str =
+        r#"{"dek":"gVwG8pMMMtdq6mS0OW19Kn7XwvdUcFJpkYN8cEnwnvs","emails":["alice@email.com"]}"#;
 
     fn bearer<'h>(email: &str, name: &str) -> Header<'h> {
         let encoding_key =

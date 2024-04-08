@@ -26,13 +26,15 @@
     if ($user === null || $token === null) {
       throw new Error("Cannot decrypt without logging in.");
     }
-    const { sealedEnvelope, cipherText } = Cipherly.decodeAuthPayload(payload);
-    const envelope = await Cipherly.unseal(sealedEnvelope, $token);
-    const plainText = await Cipherly.decrypt(
-      cipherText,
-      envelope.dek,
-      envelope.iv,
-    );
+    const {
+      k: kid,
+      n: nonce,
+      se: data,
+      iv: iv,
+      ct: cipherText,
+    } = Cipherly.decodeAuthPayload(payload);
+    const envelope = await Cipherly.unseal({ kid, nonce, data }, $token);
+    const plainText = await Cipherly.decrypt(cipherText, envelope.dek, iv);
     return Cipherly.decodeUtf8(plainText);
   }
 </script>

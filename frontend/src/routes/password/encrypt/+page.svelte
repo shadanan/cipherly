@@ -23,7 +23,7 @@
       iv,
     );
 
-    return Cipherly.encodePasswordPayload({ salt, iv, cipherText });
+    return Cipherly.encodePasswordPayload({ s: salt, iv: iv, ct: cipherText });
   }
 </script>
 
