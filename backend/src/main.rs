@@ -1,6 +1,6 @@
 use aes_gcm::{
-    aead::{Aead, KeyInit, OsRng},
-    AeadCore, Aes256Gcm, Key,
+    aead::{Aead, OsRng},
+    AeadCore, Aes256Gcm,
 };
 use base64::prelude::*;
 use google::Certs;
@@ -8,9 +8,10 @@ use rmp_serde::{from_slice, to_vec};
 use rocket::{fs::FileServer, launch, post, routes, Build, Rocket, State};
 use rocket::{http::Status, serde::json::Json};
 use serde::{Deserialize, Serialize};
-use std::env;
+use std::{collections::HashMap, env};
 
 mod google;
+mod kek;
 
 #[derive(Debug, Serialize, Deserialize)]
 struct Envelope {
@@ -26,9 +27,13 @@ struct SealedEnvelope {
 }
 
 #[post("/seal", data = "<envelope>")]
-fn seal(envelope: Json<Envelope>, kek: &State<Aes256Gcm>) -> Result<Json<SealedEnvelope>, Status> {
+fn seal(
+    envelope: Json<Envelope>,
+    keks: &State<HashMap<String, Aes256Gcm>>,
+) -> Result<Json<SealedEnvelope>, Status> {
     let buf = to_vec::<Envelope>(&envelope).map_err(|_| Status::InternalServerError)?;
     let nonce = Aes256Gcm::generate_nonce(&mut OsRng);
+    let kek = keks.get("v1").ok_or(Status::InternalServerError)?;
     let ciphertext = kek
         .encrypt(&nonce, buf.as_slice())
         .map_err(|_| Status::InternalServerError)?;
@@ -42,18 +47,16 @@ fn seal(envelope: Json<Envelope>, kek: &State<Aes256Gcm>) -> Result<Json<SealedE
 #[post("/unseal", data = "<sealed_envelope>")]
 fn unseal(
     sealed_envelope: Json<SealedEnvelope>,
-    kek: &State<Aes256Gcm>,
+    keks: &State<HashMap<String, Aes256Gcm>>,
     claims: google::Claims,
 ) -> Result<Json<Envelope>, Status> {
-    if sealed_envelope.kid != "v1" {
-        return Err(Status::Unauthorized);
-    }
     let nonce = BASE64_URL_SAFE_NO_PAD
         .decode(&sealed_envelope.nonce)
         .map_err(|_| Status::Unauthorized)?;
     let ciphertext = BASE64_URL_SAFE_NO_PAD
         .decode(&sealed_envelope.data)
         .map_err(|_| Status::Unauthorized)?;
+    let kek = keks.get(&sealed_envelope.kid).ok_or(Status::Unauthorized)?;
     let plaintext = kek
         .decrypt(nonce.as_slice().into(), ciphertext.as_slice())
         .map_err(|_| Status::Unauthorized)?;
@@ -64,12 +67,11 @@ fn unseal(
     Ok(Json(envelope))
 }
 
-fn cipherly(base64_kek: &str, certs: Certs) -> Rocket<Build> {
-    let bytes_kek = BASE64_URL_SAFE_NO_PAD.decode(base64_kek).unwrap();
-    let kek = Aes256Gcm::new(Key::<Aes256Gcm>::from_slice(&bytes_kek));
+fn cipherly(json_keks: &str, certs: Certs) -> Rocket<Build> {
+    let keks = kek::parse(json_keks).expect("Failed to parse KEKs");
 
     rocket::build()
-        .manage(kek)
+        .manage(keks)
         .manage(certs)
         .mount("/api", routes![seal, unseal])
         .mount("/", FileServer::from("./static"))
@@ -78,8 +80,8 @@ fn cipherly(base64_kek: &str, certs: Certs) -> Rocket<Build> {
 #[launch]
 fn rocket() -> Rocket<Build> {
     env::set_var("ROCKET_PORT", env::var("PORT").unwrap_or("8000".into()));
-    let kek = env::var("KEK").expect("Error: KEK environment variable is not set.");
-    let certs = google::fetch().unwrap();
+    let kek = env::var("KEKS").expect("KEKS environment variable is not set");
+    let certs = google::fetch().expect("Failed to fetch Google certs");
     cipherly(&kek, certs)
 }
 
@@ -91,7 +93,7 @@ mod tests {
     use rocket::http::{Header, Status};
     use rocket::local::blocking::Client;
 
-    const TEST_KEK: &str = "jRg36ErQ6FLcc7nZgngOpjJnJLGwA3xaMy0yx1pxJrI";
+    const TEST_KEK: &str = r#"{"v1":"jRg36ErQ6FLcc7nZgngOpjJnJLGwA3xaMy0yx1pxJrI"}"#;
     const ALICE_ENVELOPE: &str =
         r#"{"dek":"gVwG8pMMMtdq6mS0OW19Kn7XwvdUcFJpkYN8cEnwnvs","emails":["alice@email.com"]}"#;
 
