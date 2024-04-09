@@ -1,13 +1,13 @@
 <script lang="ts">
+  import "../app.pcss";
   import Banner from "$/lib/components/Banner.svelte";
   import DarkModeToggle from "$/lib/components/DarkModeToggle.svelte";
   import Footer from "$/lib/components/Footer.svelte";
   import Main from "$/lib/components/Main.svelte";
   import PrimaryNav from "$/lib/components/PrimaryNav.svelte";
   import SecondaryNav from "$/lib/components/SecondaryNav.svelte";
-  import config from "$/lib/config";
   import { ModeWatcher } from "mode-watcher";
-  import "../app.pcss";
+  import { KeyRound, Unlock, User } from "lucide-svelte";
 </script>
 
 <ModeWatcher />
@@ -15,10 +15,23 @@
   <DarkModeToggle />
   <section class="text-foregound bg-background pt-16">
     <Banner />
-    <PrimaryNav items={config.site.primaryNavItems} />
+    <PrimaryNav
+      items={[
+        {
+          title: "Password Encryption",
+          href: "/password/encrypt/",
+          icon: KeyRound,
+        },
+        {
+          title: "Auth Encryption",
+          href: "/auth/encrypt/",
+          icon: User,
+        },
+      ]}
+    />
     <Main>
       <div class="px-4 lg:px-10">
-        <SecondaryNav items={config.site.secondaryNavItems} />
+        <SecondaryNav />
         <div class="flex w-full flex-1 flex-col overflow-hidden">
           <slot />
         </div>

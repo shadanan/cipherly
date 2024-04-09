@@ -1,7 +1,11 @@
 <script lang="ts">
   import youTubeLogo from "$lib/assets/youtube.svg";
 
-  export let video: { id: string; title: string };
+  interface YouTubeVideo {
+    id: string;
+    title: string;
+  }
+  export let video: YouTubeVideo;
   const videoUrl = `https://youtu.be/${video.id}`;
   const thumbnail = `https://i3.ytimg.com/vi/${video.id}/maxresdefault.jpg`;
 

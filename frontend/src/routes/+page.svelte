@@ -1,12 +1,22 @@
 <script lang="ts">
   import YouTubeVideoCard from "$/lib/components/YouTubeVideoCard.svelte";
-  import config from "$lib/config";
+  const youTubeVideos = [
+    {
+      id: "oKCNhjF9k8c",
+      title: "Encrypting a Secret with a Password directly in the Browser",
+    },
+    {
+      id: "AsxSR4mtCuM",
+      title:
+        "Encrypting a Secret that can only be Decrypted by the Authorized User",
+    },
+  ];
 </script>
 
 <section class="space-y-10 py-4 text-lg md:py-10">
   <div class="space-y-4">
     <h1 class="pb-1 text-3xl font-bold">What is Cipherly?</h1>
-    <p>{config.site.description}</p>
+    <p>Cipherly is a browser-based encryption tool for sharing secrets</p>
     <p>
       It uses the browser's built-in <a
         target="_blank"
@@ -22,13 +32,13 @@
     <p>
       You can follow along on the <a
         class="text-primary underline underline-offset-4"
-        href={config.site.youTubeChannelUrl}
+        href="https://www.youtube.com/@FriendlyTL"
       >
         Friendly TL YouTube channel!
       </a>
     </p>
     <div class="flex flex-wrap">
-      {#each config.site.youTubeVideos as video}
+      {#each youTubeVideos as video}
         <YouTubeVideoCard {video} />
       {/each}
     </div>
