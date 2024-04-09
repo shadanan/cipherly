@@ -1,15 +1,41 @@
 <script lang="ts">
   import { cn } from "$lib/utils";
   import { page } from "$app/stores";
+  import { Unlock, Lock } from "lucide-svelte";
 
-  export let items: {
+  interface SecondaryNavItem {
     href: string;
     title: string;
     parent: string;
     disabled?: boolean;
-    soon?: boolean;
     icon: ConstructorOfATypedSvelteComponent;
-  }[];
+  }
+  const items: SecondaryNavItem[] = [
+    {
+      title: "Encrypt",
+      href: "/password/encrypt/",
+      parent: "/password/",
+      icon: Lock,
+    },
+    {
+      title: "Decrypt",
+      href: "/password/",
+      parent: "/password/",
+      icon: Unlock,
+    },
+    {
+      title: "Encrypt",
+      href: "/auth/encrypt/",
+      parent: "/auth/",
+      icon: Lock,
+    },
+    {
+      title: "Decrypt",
+      href: "/auth/",
+      parent: "/auth/",
+      icon: Unlock,
+    },
+  ];
 </script>
 
 {#if items.length && $page.url.pathname !== "/"}
