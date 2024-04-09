@@ -57,9 +57,9 @@ function extractHash(data: string): string {
 }
 
 type PasswordPayload = {
-  salt: Uint8Array;
-  iv: Uint8Array;
-  cipherText: Uint8Array;
+  s: Uint8Array; // salt
+  iv: Uint8Array; // initialization vector
+  ct: Uint8Array; // ciphertext
 };
 
 export function encodePasswordPayload(payload: PasswordPayload): string {
@@ -117,8 +117,11 @@ export async function decrypt(
 }
 
 type AuthPayload = {
-  sealedEnvelope: Uint8Array;
-  cipherText: Uint8Array;
+  k: string; // kid
+  n: Uint8Array; // nonce
+  se: Uint8Array; // sealed envelope
+  iv: Uint8Array; // initialization vector
+  ct: Uint8Array; // ciphertext
 };
 
 export function encodeAuthPayload(payload: AuthPayload): string {
@@ -131,11 +134,16 @@ export function decodeAuthPayload(data: string): AuthPayload {
 
 type Envelope = {
   dek: CryptoKey;
-  iv: Uint8Array;
   emails: string[];
 };
 
-export async function seal(envelope: Envelope): Promise<Uint8Array> {
+type SealedEnvelope = {
+  kid: string;
+  nonce: Uint8Array;
+  data: Uint8Array;
+};
+
+export async function seal(envelope: Envelope): Promise<SealedEnvelope> {
   const encodedDek = await crypto.subtle.exportKey("raw", envelope.dek);
   const response = await fetch("/api/seal", {
     method: "POST",
@@ -144,7 +152,6 @@ export async function seal(envelope: Envelope): Promise<Uint8Array> {
     },
     body: JSON.stringify({
       dek: encodeBase64(new Uint8Array(encodedDek)),
-      iv: encodeBase64(envelope.iv),
       emails: envelope.emails,
     }),
   });
@@ -152,11 +159,15 @@ export async function seal(envelope: Envelope): Promise<Uint8Array> {
     throw { code: response.status, message: response.statusText };
   }
   const result = await response.json();
-  return decodeBase64(result.data);
+  return {
+    kid: result.kid,
+    nonce: decodeBase64(result.nonce),
+    data: decodeBase64(result.data),
+  };
 }
 
 export async function unseal(
-  data: Uint8Array,
+  envelope: SealedEnvelope,
   token: string,
 ): Promise<Envelope> {
   const response = await fetch("/api/unseal", {
@@ -166,7 +177,9 @@ export async function unseal(
       Authorization: "Bearer " + token,
     },
     body: JSON.stringify({
-      data: encodeBase64(data),
+      kid: envelope.kid,
+      nonce: encodeBase64(envelope.nonce),
+      data: encodeBase64(envelope.data),
     }),
   });
   if (!response.ok) {
@@ -181,5 +194,5 @@ export async function unseal(
     ["encrypt", "decrypt"],
   );
 
-  return { dek, iv: decodeBase64(result.iv), emails: result.emails };
+  return { dek, emails: result.emails };
 }

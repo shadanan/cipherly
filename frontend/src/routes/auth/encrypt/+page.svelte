@@ -23,8 +23,14 @@
       dek,
       iv,
     );
-    const sealedEnvelope = await Cipherly.seal({ dek, iv, emails });
-    return Cipherly.encodeAuthPayload({ sealedEnvelope, cipherText });
+    const { kid, nonce, data } = await Cipherly.seal({ dek, emails });
+    return Cipherly.encodeAuthPayload({
+      k: kid,
+      n: nonce,
+      se: data,
+      iv: iv,
+      ct: cipherText,
+    });
   }
 
   function appendAndClearEmail() {

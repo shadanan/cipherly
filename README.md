@@ -66,10 +66,10 @@ gcloud run deploy cipherly \
    ```
 
 1. Start a backend server using a test [KEK](https://cloud.google.com/kms/docs/envelope-encryption#key_encryption_keys)
-   First, install [cargo-watch](https://crates.io/crates/cargo-watch) then run: 
+   First, install [cargo-watch](https://crates.io/crates/cargo-watch) then run:
 
    ```sh
-   KEK="jRg36ErQ6FLcc7nZgngOpjJnJLGwA3xaMy0yx1pxJrI" cargo watch -x run
+   KEKS='{"v1":"jRg36ErQ6FLcc7nZgngOpjJnJLGwA3xaMy0yx1pxJrI"}' cargo watch -x run
    ```
 
 ## Message Format
