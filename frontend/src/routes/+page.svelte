@@ -1,5 +1,5 @@
 <script lang="ts">
-  import YouTubeVideoCard from "$/lib/components/YouTubeVideoCard.svelte";
+  import YouTubeVideoCard from "$lib/components/YouTubeVideoCard.svelte";
   const youTubeVideos = [
     {
       id: "oKCNhjF9k8c",

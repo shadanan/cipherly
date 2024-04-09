@@ -1,13 +1,13 @@
 <script lang="ts">
-  import "../app.pcss";
-  import Banner from "$/lib/components/Banner.svelte";
-  import DarkModeToggle from "$/lib/components/DarkModeToggle.svelte";
-  import Footer from "$/lib/components/Footer.svelte";
-  import Main from "$/lib/components/Main.svelte";
-  import PrimaryNav from "$/lib/components/PrimaryNav.svelte";
-  import SecondaryNav from "$/lib/components/SecondaryNav.svelte";
+  import Banner from "$lib/components/Banner.svelte";
+  import DarkModeToggle from "$lib/components/DarkModeToggle.svelte";
+  import Footer from "$lib/components/Footer.svelte";
+  import Main from "$lib/components/Main.svelte";
+  import PrimaryNav from "$lib/components/PrimaryNav.svelte";
+  import SecondaryNav from "$lib/components/SecondaryNav.svelte";
+  import { KeyRound, User } from "lucide-svelte";
   import { ModeWatcher } from "mode-watcher";
-  import { KeyRound, Unlock, User } from "lucide-svelte";
+  import "../app.pcss";
 </script>
 
 <ModeWatcher />
