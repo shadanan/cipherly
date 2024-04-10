@@ -29,13 +29,14 @@ describe("cipherly", () => {
       protocol: "https:",
       host: "cipherly.app",
     });
-    const payload = {
+    const actual = {
       s: Cipherly.generateSalt(),
       iv: Cipherly.generateIv(),
       ct: Cipherly.encodeUtf8("hello"),
     };
-    const encoded = Cipherly.encodePasswordPayload(payload);
-    expect(Cipherly.decodePasswordPayload(encoded)).toEqual(payload);
+    const encoded = Cipherly.encodePasswordPayload(actual);
+    const expected = { es: Cipherly.EncryptionScheme.Password, ...actual };
+    expect(Cipherly.decodePasswordPayload(encoded)).toEqual(expected);
   });
 
   it("deriveKey derives a key from a password and salt", async () => {
@@ -60,15 +61,16 @@ describe("cipherly", () => {
       protocol: "https:",
       host: "cipherly.app",
     });
-    const payload = {
+    const actual = {
       k: "key",
       n: new Uint8Array(16),
       se: new Uint8Array(16),
       iv: new Uint8Array(12),
       ct: new Uint8Array(16),
     };
-    const encoded = Cipherly.encodeAuthPayload(payload);
-    expect(Cipherly.decodeAuthPayload(encoded)).toEqual(payload);
+    const encoded = Cipherly.encodeAuthPayload(actual);
+    const expected = { es: Cipherly.EncryptionScheme.Auth, ...actual };
+    expect(Cipherly.decodeAuthPayload(encoded)).toEqual(expected);
   });
 
   // TODO: Unit tests for seal / unseal with a mock of the backend

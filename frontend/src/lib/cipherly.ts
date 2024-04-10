@@ -44,8 +44,8 @@ export function generateIv(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(12));
 }
 
-function cipherlyHost(): string {
-  return `${location.protocol}//${location.host}`;
+function decryptUrl(hash: string): string {
+  return `${location.protocol}//${location.host}/decrypt/#${hash}`;
 }
 
 function extractHash(data: string): string {
@@ -56,14 +56,29 @@ function extractHash(data: string): string {
   return data;
 }
 
-type PasswordPayload = {
+export enum EncryptionScheme {
+  Password = 0,
+  Auth = 1,
+}
+
+type PayloadHeader = {
+  es: EncryptionScheme;
+};
+
+type PasswordBody = {
   s: Uint8Array; // salt
   iv: Uint8Array; // initialization vector
   ct: Uint8Array; // ciphertext
 };
 
-export function encodePasswordPayload(payload: PasswordPayload): string {
-  return `${cipherlyHost()}/password/#${encodeMessagePack(payload)}`;
+export type PasswordPayload = PayloadHeader & PasswordBody;
+
+export function encodePasswordPayload(payload: PasswordBody): string {
+  const msgPackPayload: PasswordPayload = {
+    es: EncryptionScheme.Password,
+    ...payload,
+  };
+  return decryptUrl(encodeMessagePack(msgPackPayload));
 }
 
 export function decodePasswordPayload(data: string): PasswordPayload {
@@ -116,7 +131,7 @@ export async function decrypt(
   );
 }
 
-type AuthPayload = {
+type AuthBody = {
   k: string; // kid
   n: Uint8Array; // nonce
   se: Uint8Array; // sealed envelope
@@ -124,12 +139,24 @@ type AuthPayload = {
   ct: Uint8Array; // ciphertext
 };
 
-export function encodeAuthPayload(payload: AuthPayload): string {
-  return `${cipherlyHost()}/auth/#${encodeMessagePack(payload)}`;
+export type AuthPayload = PayloadHeader & AuthBody;
+
+export function encodeAuthPayload(payload: AuthBody): string {
+  const msgPackPayload: AuthPayload = {
+    es: EncryptionScheme.Auth,
+    ...payload,
+  };
+  return decryptUrl(encodeMessagePack(msgPackPayload));
 }
 
 export function decodeAuthPayload(data: string): AuthPayload {
   return decodeMessagePack(extractHash(data)) as AuthPayload;
+}
+
+export type Payload = PasswordPayload | AuthPayload;
+
+export function decodePayload(data: string): Payload {
+  return decodeMessagePack(extractHash(data)) as Payload;
 }
 
 type Envelope = {
@@ -183,7 +210,7 @@ export async function unseal(
     }),
   });
   if (!response.ok) {
-    throw { code: response.status, message: response.statusText };
+    throw response;
   }
   const result = await response.json();
   const dek = await crypto.subtle.importKey(
