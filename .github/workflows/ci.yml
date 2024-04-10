@@ -17,7 +17,7 @@ jobs:
         with:
           toolchain: stable
           override: true
-      - run: rm -f static && mkdir static 
+      - run: rm -f static && mkdir static
       - run: cargo test
       - run: cargo clippy -- -D warnings
       - run: cargo fmt -- --check
@@ -29,6 +29,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
+        with:
+          node-version: 21
       - run: npm install
       - run: npm run build
       - run: npm run check
+      - run: npm run test
