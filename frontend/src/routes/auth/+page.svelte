@@ -1,140 +1,175 @@
 <script lang="ts">
-  import googleLogo from "$lib/assets/google.svg";
-  import { logout, renderLoginButton, token, user } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
-  import Avatar from "$lib/components/Avatar.svelte";
   import CopyText from "$lib/components/CopyText.svelte";
   import * as Alert from "$lib/components/ui/alert";
+  import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
+  import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
-  import { onMount } from "svelte";
+  import { Info, X } from "lucide-svelte";
 
-  onMount(() => {
-    renderLoginButton(document.getElementById("login-button"));
-  });
+  let authorizedEmails = new Set<string>([]);
+  let email = "";
+  let plainText = "";
+  let payload: Promise<string> | null = null;
 
-  let payload = "";
-  let plainText: Promise<string> | null = null;
-
-  if (location.hash) {
-    payload = location.href;
-  }
-
-  async function decrypt(payload: string): Promise<string> {
-    if ($user === null || $token === null) {
-      throw new Error("Cannot decrypt without logging in.");
-    }
-    const {
+  async function encrypt(plainText: string, emails: string[]): Promise<string> {
+    const dek = await Cipherly.generateKey();
+    const iv = Cipherly.generateIv();
+    const cipherText = await Cipherly.encrypt(
+      Cipherly.encodeUtf8(plainText),
+      dek,
+      iv,
+    );
+    const { kid, nonce, data } = await Cipherly.seal({ dek, emails });
+    return Cipherly.encodeAuthPayload({
       k: kid,
       n: nonce,
       se: data,
       iv: iv,
       ct: cipherText,
-    } = Cipherly.decodeAuthPayload(payload);
-    const envelope = await Cipherly.unseal({ kid, nonce, data }, $token);
-    const plainText = await Cipherly.decrypt(cipherText, envelope.dek, iv);
-    return Cipherly.decodeUtf8(plainText);
+    });
+  }
+
+  function appendAndClearEmail() {
+    if (email === "") {
+      return;
+    }
+    authorizedEmails = new Set([...authorizedEmails, email]);
+    email = "";
   }
 </script>
 
 <div class="space-y-8">
   <div
-    class="border-background-foreground space-y-6 rounded-md border-2 bg-card p-8"
+    class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
   >
     <div>
-      <h1 class="text-xl font-bold text-foreground">
-        Authorization Based Decryption
-      </h1>
+      <h1 class="text-xl font-bold text-foreground">Auth Encrypt</h1>
     </div>
 
-    <div class={$user === null ? "" : "hidden"}>
-      <div id="login-button" class="w-[200px]" style="color-scheme:light">
-        <Skeleton class="h-10" />
-      </div>
-    </div>
-
-    {#if $user !== null}
-      <div class="flex items-center space-x-4">
-        <div
-          class="flex items-center space-x-4 rounded-3xl bg-muted px-4 py-2 text-muted-foreground"
+    <form
+      class="space-y-6"
+      on:submit|preventDefault={() => {
+        appendAndClearEmail();
+        payload = encrypt(plainText, Array.from(authorizedEmails));
+      }}
+    >
+      <div class="space-y-2">
+        <Label
+          class="text-background-foreground text-sm uppercase tracking-wider"
+          for="plainText"
         >
-          <img src={googleLogo} alt="Google" class="h-4 w-4" />
-          <p>
-            Logged in as {$user?.name}
-          </p>
-          <Avatar user={$user} class="h-6 w-6" />
-        </div>
-        <Button on:click={() => logout()} variant="secondary">Logout</Button>
+          Plaintext
+        </Label>
+        <Textarea
+          required
+          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
+          id="plainText"
+          bind:value={plainText}
+          placeholder="The plaintext secret to encrypt"
+        />
       </div>
 
-      <form
-        class="space-y-6"
-        on:submit|preventDefault={() => (plainText = decrypt(payload))}
-      >
-        <div class="space-y-2">
-          <Label
-            class="text-background-foreground text-sm uppercase tracking-wider"
-            for="payload">Ciphertext Payload</Label
-          >
-          <Textarea
-            required
-            class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-            id="payload"
-            bind:value={payload}
-            placeholder="The ciphertext payload to be decrypted"
-          />
-        </div>
+      <div class="space-y-2">
+        <Label
+          for="email"
+          class="text-background-foreground text-sm uppercase tracking-wider"
+        >
+          Authorized Emails
+        </Label>
 
-        <div class="pt-4">
-          <Button class="min-w-[140px] text-lg font-bold" type="submit"
-            >Decrypt</Button
-          >
-        </div>
-      </form>
-    {/if}
+        <p class="flex items-center space-x-1 text-xs text-blue-500">
+          <Info class="inline-block h-[12px] w-[12px]"></Info>
+          <span>Click Enter after typing each email</span>
+        </p>
+        <Input
+          id="email"
+          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
+          placeholder="Recipient email address"
+          type="email"
+          required={authorizedEmails.size === 0}
+          bind:value={email}
+          on:keydown={(e) => {
+            if (e.key === "Enter") {
+              appendAndClearEmail();
+              e.preventDefault();
+            }
+          }}
+        />
+
+        {#if authorizedEmails.size > 0}
+          <div class="flex flex-wrap pt-2">
+            {#each Array.from(authorizedEmails) as email}
+              <Badge variant="secondary" class="mb-2 mr-2 space-x-1 text-sm">
+                <span>{email}</span>
+                <Button
+                  class="m-0 h-4 w-4 p-0 "
+                  variant="ghost"
+                  on:click={() => {
+                    authorizedEmails = new Set(
+                      Array.from(authorizedEmails).filter((x) => x !== email),
+                    );
+                  }}
+                >
+                  <X class="cursor-pointer text-gray-400 hover:text-gray-500" />
+                </Button>
+              </Badge>
+            {/each}
+          </div>
+        {:else}
+          <p class="text-sm text-gray-400">No emails selected</p>
+        {/if}
+      </div>
+
+      <div class="pt-4">
+        <Button class="min-w-[140px] text-lg font-bold" type="submit">
+          Encrypt
+        </Button>
+      </div>
+    </form>
   </div>
-  {#if plainText}
+
+  {#if payload}
     <div
       class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
     >
       <div>
-        <h1 class="text-xl font-bold text-foreground">Decrypted Content</h1>
+        <h1 class="text-xl font-bold text-foreground">Encrypted Content</h1>
       </div>
-      {#await plainText}
+
+      {#await payload}
         <div class="space-y-6 py-6">
           <Skeleton class="h-20 w-full" />
           <Skeleton class="h-10 w-full" />
         </div>
-      {:then plainText}
+      {:then payload}
         <div class="space-y-2">
           <Label
-            for="plainText"
+            for="payload"
             class="text-background-foreground text-sm uppercase tracking-wider"
           >
-            Decrypted Plaintext
+            Ciphertext Payload
           </Label>
           <Textarea
-            class="disabled:opacity-1 border-2 border-muted text-base focus:ring-0 focus-visible:ring-0 disabled:cursor-text disabled:text-green-600"
-            id="plainText"
+            class="disabled:opacity-1 border-2 border-muted text-base focus-visible:outline-none focus-visible:ring-0 disabled:cursor-text disabled:text-green-600"
+            id="payload"
             disabled
-            value={plainText}
-            placeholder="The decrypted plaintext"
+            value={payload}
           />
         </div>
-        <CopyText label="Plaintext" text={plainText} />
-      {:catch err}
+
+        <div class="space-x-2 pt-4">
+          <CopyText label="Ciphertext" text={payload} />
+        </div>
+      {:catch error}
         <Alert.Root variant="destructive" class="space-y-2 rounded">
-          {#if err.code === 401}
-            <Alert.Title>Unauthorized</Alert.Title>
-            <Alert.Description>
-              You are not authorized to decrypt this secret.
-            </Alert.Description>
-          {:else}
-            <Alert.Title>Failed to Decrypt</Alert.Title>
-            <Alert.Description>Ciphertext is invalid.</Alert.Description>
-          {/if}
+          <Alert.Title>Failed to Encrypt</Alert.Title>
+          <Alert.Description>
+            {error.message}
+          </Alert.Description>
         </Alert.Root>
       {/await}
     </div>
