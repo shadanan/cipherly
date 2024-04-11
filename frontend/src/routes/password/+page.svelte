@@ -5,26 +5,25 @@
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { Skeleton } from "$lib/components/ui/skeleton";
+  import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { Textarea } from "$lib/components/ui/textarea";
 
-  let payload = "";
+  let plainText = "";
   let password = "";
-  let plainText: Promise<string> | null = null;
+  let payload: Promise<string> | null = null;
 
-  if (location.hash) {
-    payload = location.href;
-  }
-
-  async function decrypt(payload: string, password: string): Promise<string> {
-    const {
-      s: salt,
-      iv: iv,
-      ct: cipherText,
-    } = Cipherly.decodePasswordPayload(payload);
+  async function encrypt(plainText: string, password: string): Promise<string> {
+    const salt = Cipherly.generateSalt();
     const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
-    const plainText = await Cipherly.decrypt(cipherText, key, iv);
-    return Cipherly.decodeUtf8(plainText);
+
+    const iv = Cipherly.generateIv();
+    const cipherText = await Cipherly.encrypt(
+      Cipherly.encodeUtf8(plainText),
+      key,
+      iv,
+    );
+
+    return Cipherly.encodePasswordPayload({ s: salt, iv: iv, ct: cipherText });
   }
 </script>
 
@@ -33,26 +32,24 @@
     class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
   >
     <div>
-      <h1 class="text-xl font-bold text-foreground">
-        Password Based Decryption
-      </h1>
+      <h1 class="text-xl font-bold text-foreground">Password Encrypt</h1>
     </div>
 
     <form
       class="space-y-6"
-      on:submit|preventDefault={() => (plainText = decrypt(payload, password))}
+      on:submit|preventDefault={() => (payload = encrypt(plainText, password))}
     >
       <div class="space-y-2">
         <Label
           class="text-background-foreground text-sm uppercase tracking-wider"
-          for="payload">Ciphertext Payload</Label
+          for="plainText">Plaintext</Label
         >
         <Textarea
-          id="payload"
           required
           class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-          bind:value={payload}
-          placeholder="The ciphertext payload to be decrypted"
+          id="plainText"
+          bind:value={plainText}
+          placeholder="The plaintext secret to encrypt"
         />
       </div>
 
@@ -64,54 +61,56 @@
         <Input
           id="password"
           class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-          type="password"
-          placeholder="The password to use for decryption"
+          placeholder="The password to use for encryption"
           bind:value={password}
         />
       </div>
 
       <div class="pt-4">
         <Button class="min-w-[140px] text-lg font-bold" type="submit">
-          Decrypt
+          Encrypt
         </Button>
       </div>
     </form>
   </div>
 
-  {#if plainText}
+  {#if payload}
     <div
-      class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
+      class="border-background-foreground space-y-6 rounded-md border-2 bg-card p-8"
     >
       <div>
-        <h1 class="text-xl font-bold text-foreground">Decrypted Content</h1>
+        <h1 class="text-xl font-bold text-foreground">Encrypted Content</h1>
       </div>
-      {#await plainText}
+
+      {#await payload}
         <div class="space-y-6 py-6">
           <Skeleton class="h-20 w-full" />
           <Skeleton class="h-10 w-full" />
         </div>
-      {:then plainText}
+      {:then payload}
         <div class="space-y-2">
           <Label
+            for="payload"
             class="text-background-foreground text-sm uppercase tracking-wider"
-            for="plainText"
           >
-            Decrypted Plaintext
+            Ciphertext Payload
           </Label>
           <Textarea
-            class="disabled:opacity-1 border-2 border-muted text-base focus-visible:outline-none focus-visible:ring-0 disabled:cursor-text disabled:text-green-600"
-            id="plainText"
+            class="focus-visible:ring-none disabled:opacity-1 border-2  border-muted text-base focus-visible:outline-none disabled:cursor-text disabled:text-green-600"
+            id="payload"
             disabled
-            value={plainText}
-            placeholder="The decrypted plaintext"
+            value={payload}
+            placeholder="The plain text secret to encrypt"
           />
         </div>
-        <CopyText label="Plaintext" text={plainText} />
-      {:catch}
+        <div class="space-x-2 pt-4">
+          <CopyText label="Ciphertext" text={payload} />
+        </div>
+      {:catch error}
         <Alert.Root variant="destructive" class="space-y-2 rounded">
-          <Alert.Title>Failed to Decrypt</Alert.Title>
+          <Alert.Title>Failed to Encrypt</Alert.Title>
           <Alert.Description>
-            Password is incorrect or ciphertext is invalid.
+            {error.message}
           </Alert.Description>
         </Alert.Root>
       {/await}

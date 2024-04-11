@@ -4,8 +4,7 @@
   import Footer from "$lib/components/Footer.svelte";
   import Main from "$lib/components/Main.svelte";
   import PrimaryNav from "$lib/components/PrimaryNav.svelte";
-  import SecondaryNav from "$lib/components/SecondaryNav.svelte";
-  import { KeyRound, User } from "lucide-svelte";
+  import { KeyRound, Unlock, User } from "lucide-svelte";
   import { ModeWatcher } from "mode-watcher";
   import "../app.pcss";
 </script>
@@ -18,20 +17,24 @@
     <PrimaryNav
       items={[
         {
-          title: "Password Encryption",
-          href: "/password/encrypt/",
+          title: "Decrypt",
+          href: "/decrypt/",
+          icon: Unlock,
+        },
+        {
+          title: "Password Encrypt",
+          href: "/password/",
           icon: KeyRound,
         },
         {
-          title: "Auth Encryption",
-          href: "/auth/encrypt/",
+          title: "Auth Encrypt",
+          href: "/auth/",
           icon: User,
         },
       ]}
     />
     <Main>
       <div class="px-4 lg:px-10">
-        <SecondaryNav />
         <div class="flex w-full flex-1 flex-col overflow-hidden">
           <slot />
         </div>
