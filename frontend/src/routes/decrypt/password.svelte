@@ -1,17 +1,12 @@
 <script lang="ts">
   import * as Cipherly from "$lib/cipherly";
-  import Button from "$lib/components/ui/button/button.svelte";
   import Input from "$lib/components/ui/input/input.svelte";
   import Label from "$lib/components/ui/label/label.svelte";
 
   export let payload: Cipherly.PasswordPayload;
-  export let plainText: Promise<string> | null = null;
   let password = "";
 
-  async function decrypt(
-    payload: Cipherly.PasswordPayload,
-    password: string,
-  ): Promise<string> {
+  export async function decrypt(): Promise<string> {
     const { s: salt, iv: iv, ct: cipherText } = payload;
     const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
     const plainText = await Cipherly.decrypt(cipherText, key, iv);
@@ -31,11 +26,4 @@
     placeholder="The password to use for decryption"
     bind:value={password}
   />
-</div>
-
-<div class="pt-4">
-  <Button
-    class="min-w-[140px] text-lg font-bold"
-    on:click={() => (plainText = decrypt(payload, password))}>Decrypt</Button
-  >
 </div>

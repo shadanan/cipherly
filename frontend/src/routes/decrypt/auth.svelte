@@ -8,18 +8,14 @@
   import { onMount } from "svelte";
 
   export let payload: Cipherly.AuthPayload;
-  export let plainText: Promise<string> | null = null;
 
   onMount(() => {
     renderLoginButton(document.getElementById("login-button"));
   });
 
-  async function decrypt(
-    payload: Cipherly.AuthPayload,
-    token: string,
-  ): Promise<string> {
+  export async function decrypt(): Promise<string> {
     const { k: kid, n: nonce, se: data, iv: iv, ct: cipherText } = payload;
-    const envelope = await Cipherly.unseal({ kid, nonce, data }, token);
+    const envelope = await Cipherly.unseal({ kid, nonce, data }, $token!);
     const plainText = await Cipherly.decrypt(cipherText, envelope.dek, iv);
     return Cipherly.decodeUtf8(plainText);
   }
@@ -43,14 +39,5 @@
       <Avatar user={$user} class="h-6 w-6" />
     </div>
     <Button on:click={() => logout()} variant="secondary">Logout</Button>
-  </div>
-
-  <div class="pt-4">
-    <Button
-      class="min-w-[140px] text-lg font-bold"
-      on:click={() => (plainText = decrypt(payload, $token || ""))}
-    >
-      Decrypt
-    </Button>
   </div>
 {/if}

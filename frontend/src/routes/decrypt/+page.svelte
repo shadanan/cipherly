@@ -4,6 +4,7 @@
   import CopyText from "$lib/components/CopyText.svelte";
   import Section from "$lib/components/Section.svelte";
   import * as Alert from "$lib/components/ui/alert";
+  import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
@@ -18,6 +19,7 @@
   let encodedPayload = "";
   let plainText: Promise<string> | null = null;
   let error: any = null;
+  let decrypt: () => Promise<string>;
 
   if (location.hash) {
     encodedPayload = location.href;
@@ -72,10 +74,19 @@
     </div>
 
     {#if payload?.es === Cipherly.EncryptionScheme.Password}
-      <Password bind:plainText payload={passwordPayload(payload)} />
+      <Password bind:decrypt payload={passwordPayload(payload)} />
     {:else if payload?.es === Cipherly.EncryptionScheme.Auth}
-      <Auth bind:plainText payload={authPayload(payload)} />
+      <Auth bind:decrypt payload={authPayload(payload)} />
     {/if}
+
+    <div class="pt-4">
+      <Button
+        class="min-w-[140px] text-lg font-bold"
+        on:click={() => (plainText = decrypt())}
+      >
+        Decrypt
+      </Button>
+    </div>
   </Section>
 
   {#if plainText}
