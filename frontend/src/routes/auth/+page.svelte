@@ -1,17 +1,14 @@
 <script lang="ts">
   import * as Cipherly from "$lib/cipherly";
+  import Chip from "$lib/components/Chip.svelte";
   import CopyText from "$lib/components/CopyText.svelte";
   import * as Alert from "$lib/components/ui/alert";
-  import { Badge } from "$lib/components/ui/badge";
   import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
-  import { Info, X } from "lucide-svelte";
 
-  let authorizedEmails = new Set<string>([]);
-  let email = "";
+  let emails: Set<string> = new Set();
   let plainText = "";
   let payload: Promise<string> | null = null;
 
@@ -32,14 +29,6 @@
       ct: cipherText,
     });
   }
-
-  function appendAndClearEmail() {
-    if (email === "") {
-      return;
-    }
-    authorizedEmails = new Set([...authorizedEmails, email]);
-    email = "";
-  }
 </script>
 
 <div class="space-y-8">
@@ -53,8 +42,7 @@
     <form
       class="space-y-6"
       on:submit|preventDefault={() => {
-        appendAndClearEmail();
-        payload = encrypt(plainText, Array.from(authorizedEmails));
+        payload = encrypt(plainText, Array.from(emails));
       }}
     >
       <div class="space-y-2">
@@ -75,53 +63,16 @@
 
       <div class="space-y-2">
         <Label
-          for="email"
+          for="emails"
           class="text-background-foreground text-sm uppercase tracking-wider"
         >
           Authorized Emails
         </Label>
-
-        <p class="flex items-center space-x-1 text-xs text-blue-500">
-          <Info class="inline-block h-[12px] w-[12px]"></Info>
-          <span>Click Enter after typing each email</span>
-        </p>
-        <Input
-          id="email"
-          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-          placeholder="Recipient email address"
-          type="email"
-          required={authorizedEmails.size === 0}
-          bind:value={email}
-          on:keydown={(e) => {
-            if (e.key === "Enter") {
-              appendAndClearEmail();
-              e.preventDefault();
-            }
-          }}
+        <Chip
+          id="emails"
+          bind:values={emails}
+          placeholder="List of email addresses authorized to decrypt"
         />
-
-        {#if authorizedEmails.size > 0}
-          <div class="flex flex-wrap pt-2">
-            {#each Array.from(authorizedEmails) as email}
-              <Badge variant="secondary" class="mb-2 mr-2 space-x-1 text-sm">
-                <span>{email}</span>
-                <Button
-                  class="m-0 h-4 w-4 p-0 "
-                  variant="ghost"
-                  on:click={() => {
-                    authorizedEmails = new Set(
-                      Array.from(authorizedEmails).filter((x) => x !== email),
-                    );
-                  }}
-                >
-                  <X class="cursor-pointer text-gray-400 hover:text-gray-500" />
-                </Button>
-              </Badge>
-            {/each}
-          </div>
-        {:else}
-          <p class="text-sm text-gray-400">No emails selected</p>
-        {/if}
       </div>
 
       <div class="pt-4">
