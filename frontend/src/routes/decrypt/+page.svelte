@@ -2,7 +2,9 @@
   import { renderLoginButton } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
   import CopyText from "$lib/components/CopyText.svelte";
+  import Section from "$lib/components/Section.svelte";
   import * as Alert from "$lib/components/ui/alert";
+  import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
@@ -17,6 +19,7 @@
   let encodedPayload = "";
   let plainText: Promise<string> | null = null;
   let error: any = null;
+  let decrypt: () => Promise<string>;
 
   if (location.hash) {
     encodedPayload = location.href;
@@ -48,21 +51,9 @@
 </script>
 
 <div class="space-y-8">
-  <div
-    class="border-background-foreground space-y-6 rounded-md border-2 bg-card p-8"
+  <Section
+    title="{payload ? Cipherly.EncryptionScheme[payload.es] : ''} Decrypt"
   >
-    <div>
-      <h1 class="text-xl font-bold text-foreground">
-        {#if payload?.es === Cipherly.EncryptionScheme.Password}
-          Password Decrypt
-        {:else if payload?.es === Cipherly.EncryptionScheme.Auth}
-          Auth Decrypt
-        {:else}
-          Decrypt
-        {/if}
-      </h1>
-    </div>
-
     <div class="space-y-2">
       <Label
         class="text-background-foreground text-sm uppercase tracking-wider"
@@ -83,19 +74,23 @@
     </div>
 
     {#if payload?.es === Cipherly.EncryptionScheme.Password}
-      <Password bind:plainText payload={passwordPayload(payload)} />
+      <Password bind:decrypt payload={passwordPayload(payload)} />
     {:else if payload?.es === Cipherly.EncryptionScheme.Auth}
-      <Auth bind:plainText payload={authPayload(payload)} />
+      <Auth bind:decrypt payload={authPayload(payload)} />
     {/if}
-  </div>
+
+    <div class="pt-4">
+      <Button
+        class="min-w-[140px] text-lg font-bold"
+        on:click={() => (plainText = decrypt())}
+      >
+        Decrypt
+      </Button>
+    </div>
+  </Section>
 
   {#if plainText}
-    <div
-      class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
-    >
-      <div>
-        <h1 class="text-xl font-bold text-foreground">Decrypted Content</h1>
-      </div>
+    <Section title="Decrypted Content">
       {#await plainText}
         <div class="space-y-6 py-6">
           <Skeleton class="h-20 w-full" />
@@ -130,6 +125,6 @@
           </Alert.Description>
         </Alert.Root>
       {/await}
-    </div>
+    </Section>
   {/if}
 </div>
