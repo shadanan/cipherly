@@ -50,7 +50,7 @@
 
 <div class="space-y-8">
   <Section
-    title={(payload ? Cipherly.EncryptionScheme[payload.es] : "") + " Decrypt"}
+    title="{payload ? Cipherly.EncryptionScheme[payload.es] : ''} Decrypt"
   >
     <div class="space-y-2">
       <Label
