@@ -4,7 +4,6 @@
   import { Button } from "./ui/button";
   import { Input } from "./ui/input";
 
-  export let id: string;
   export let values: Set<string> = new Set();
   export let placeholder = "";
 
@@ -35,7 +34,6 @@
 </p>
 
 <Input
-  {id}
   class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
   {placeholder}
   required={values.size === 0}
@@ -47,6 +45,7 @@
       addAndClear();
     }
   }}
+  {...$$restProps}
 />
 
 {#if values.size > 0}
