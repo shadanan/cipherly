@@ -9,7 +9,7 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
 
-  let emails: Set<string> = new Set();
+  let emails: string[] = [];
   let plainText = "";
   let payload: Promise<string> | null = null;
 
@@ -37,7 +37,7 @@
     <form
       class="space-y-6"
       on:submit|preventDefault={() => {
-        payload = encrypt(plainText, Array.from(emails));
+        payload = encrypt(plainText, emails);
       }}
     >
       <div class="space-y-2">
