@@ -4,19 +4,17 @@
   import { Button } from "./ui/button";
   import { Input } from "./ui/input";
 
-  export let values: Set<string> = new Set();
+  export let values: string[] = [];
   export let placeholder = "";
 
   let input: string = "";
 
   function add(value: string) {
-    values.add(value);
-    values = values;
+    values = [...new Set([...values, value])];
   }
 
   function remove(value: string) {
-    values.delete(value);
-    values = values;
+    values = values.filter((v) => v !== value);
   }
 
   function addAndClear() {
@@ -36,7 +34,7 @@
 <Input
   class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
   {placeholder}
-  required={values.size === 0}
+  required={values.length === 0}
   bind:value={input}
   on:blur={addAndClear}
   on:keydown={(e) => {
@@ -48,7 +46,7 @@
   {...$$restProps}
 />
 
-{#if values.size > 0}
+{#if values.length > 0}
   <div class="flex flex-wrap pt-2">
     {#each values as value}
       <Badge variant="secondary" class="mb-2 mr-2 space-x-1 text-sm">
