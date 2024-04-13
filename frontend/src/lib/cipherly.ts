@@ -159,6 +159,32 @@ export function decodePayload(data: string): Payload {
   return decodeMessagePack(extractHash(data)) as Payload;
 }
 
+export async function passwordDecrypt(
+  payload: Payload,
+  password: string,
+): Promise<string> {
+  const { s: salt, iv: iv, ct: cipherText } = payload as PasswordPayload;
+  const key = await deriveKey(encodeUtf8(password), salt);
+  const plainText = await decrypt(cipherText, key, iv);
+  return decodeUtf8(plainText);
+}
+
+export async function authDecrypt(
+  payload: Payload,
+  token: string,
+): Promise<string> {
+  const {
+    k: kid,
+    n: nonce,
+    se: data,
+    iv: iv,
+    ct: cipherText,
+  } = payload as AuthPayload;
+  const envelope = await unseal({ kid, nonce, data }, token);
+  const plainText = await decrypt(cipherText, envelope.dek, iv);
+  return decodeUtf8(plainText);
+}
+
 type Envelope = {
   dek: CryptoKey;
   emails: string[];

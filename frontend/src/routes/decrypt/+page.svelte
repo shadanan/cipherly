@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { renderLoginButton } from "$lib/auth";
+  import { z } from "zod";
+  import { renderLoginButton, token } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
   import CopyText from "$lib/components/CopyText.svelte";
   import Section from "$lib/components/Section.svelte";
@@ -11,92 +12,173 @@
   import { onMount } from "svelte";
   import Auth from "./auth.svelte";
   import Password from "./password.svelte";
+  import { getError, hasError } from "$lib/form";
+  import { AlertCircle } from "lucide-svelte";
 
   onMount(() => {
     renderLoginButton(document.getElementById("login-button"));
   });
 
-  let encodedPayload = "";
-  let plainText: Promise<string> | null = null;
-  let error: any = null;
-  let decrypt: () => Promise<string>;
+  const DecryptFormSchema = z.object({
+    encodedPayload: z.string().min(1),
+    payload: z
+      .custom<Cipherly.Payload | null>()
+      .refine((payload) => {
+        // version validation
+        return true; // valid
+      }, "wrong version")
+      .refine((payload) => {
+        // validate another thing
+        return true; // valid
+      }, "something else"),
+  });
+  type DecryptFormData = z.infer<typeof DecryptFormSchema>;
+
+  let validationError: z.ZodError | undefined;
+  let formData: DecryptFormData = {
+    encodedPayload: "",
+    payload: null,
+  };
+
+  let loading = false;
+  let plainText: string | null = null;
+  let decryptionError: any = null;
+  let password = "";
 
   if (location.hash) {
-    encodedPayload = location.href;
+    formData.encodedPayload = location.href;
   }
 
-  let payload: Cipherly.Payload | null;
   $: {
-    error = null;
-    payload = null;
-    plainText = null;
     try {
-      payload =
-        encodedPayload === "" ? null : Cipherly.decodePayload(encodedPayload);
+      formData.payload = formData.encodedPayload
+        ? Cipherly.decodePayload(formData.encodedPayload)
+        : null;
+      decryptionError = null;
     } catch (err) {
-      console.log(err);
-      error = err;
+      decryptionError = err;
     }
   }
 
-  function passwordPayload(
-    payload: Cipherly.Payload,
-  ): Cipherly.PasswordPayload {
-    return payload as Cipherly.PasswordPayload;
+  async function decrypt(formData: DecryptFormData): Promise<string | null> {
+    formData.payload = formData.encodedPayload
+      ? Cipherly.decodePayload(formData.encodedPayload)
+      : null;
+
+    if (formData.payload?.es === Cipherly.EncryptionScheme.Auth) {
+      return await Cipherly.authDecrypt(formData.payload, $token as string);
+    }
+    if (formData.payload?.es === Cipherly.EncryptionScheme.Password) {
+      return await Cipherly.passwordDecrypt(formData.payload, password);
+    }
+    return Promise.resolve(null);
   }
 
-  function authPayload(payload: Cipherly.Payload): Cipherly.AuthPayload {
-    return payload as Cipherly.AuthPayload;
+  function validateFormData(formData: DecryptFormData): boolean {
+    const validationResult = DecryptFormSchema.safeParse(formData);
+    validationError = validationResult.success
+      ? undefined
+      : validationResult.error;
+    return validationResult.success;
   }
 </script>
 
 <div class="space-y-8">
   <Section
-    title="{payload ? Cipherly.EncryptionScheme[payload.es] : ''} Decrypt"
+    title="{formData.payload
+      ? Cipherly.EncryptionScheme[formData.payload.es]
+      : ''} Decrypt"
   >
-    <div class="space-y-2">
-      <Label
-        class="text-background-foreground text-sm uppercase tracking-wider"
-        for="payload">Ciphertext Payload</Label
-      >
-      <Textarea
-        required
-        class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-        id="payload"
-        bind:value={encodedPayload}
-        placeholder="The ciphertext payload to be decrypted"
-      />
-      {#if error}
+    <form
+      class="space-y-6"
+      on:submit|preventDefault={async () => {
+        plainText = null;
+        if (!validateFormData(formData)) return;
+        loading = true;
+        try {
+          plainText = await decrypt(formData);
+          decryptionError = null;
+        } catch (e) {
+          decryptionError = e;
+        } finally {
+          loading = false;
+        }
+      }}
+    >
+      {#if decryptionError && decryptionError.name !== "OperationError"}
         <Alert.Root variant="destructive" class="space-y-2 rounded">
-          <Alert.Title>Invalid Payload</Alert.Title>
+          <Alert.Title>Failed to Decrypt</Alert.Title>
+          <Alert.Description>
+            {#if decryptionError.status === 401}
+              Unauthorized
+            {:else}
+              Invalid Payload
+            {/if}
+          </Alert.Description>
         </Alert.Root>
       {/if}
-    </div>
 
-    {#if payload?.es === Cipherly.EncryptionScheme.Password}
-      <Password bind:decrypt payload={passwordPayload(payload)} />
-    {:else if payload?.es === Cipherly.EncryptionScheme.Auth}
-      <Auth bind:decrypt payload={authPayload(payload)} />
-    {/if}
+      <div class="space-y-2">
+        <Label
+          class="text-background-foreground text-sm uppercase tracking-wider"
+          for="payload">Ciphertext Payload</Label
+        >
 
-    <div class="pt-4">
-      <Button
-        class="min-w-[140px] text-lg font-bold"
-        on:click={() => (plainText = decrypt())}
-      >
-        Decrypt
-      </Button>
-    </div>
+        {#if hasError(validationError, "payload") || hasError(validationError, "encodedPayload")}
+          {@const payloadErr = getError(validationError, "payload")}
+          {@const encodedPayloadErr = getError(
+            validationError,
+            "encodedPayload",
+          )}
+          <p class="flex items-center space-x-1 text-xs text-destructive">
+            <AlertCircle class="inline-block h-[12px] w-[12px]"></AlertCircle>
+            {#if encodedPayloadErr}
+              <span>{encodedPayloadErr}</span>
+            {:else}
+              <span>{payloadErr}</span>
+            {/if}
+          </p>
+        {/if}
+
+        <Textarea
+          required
+          minlength={1}
+          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
+          id="payload"
+          bind:value={formData.encodedPayload}
+          placeholder="The ciphertext payload to be decrypted"
+        />
+      </div>
+
+      {#if formData.payload?.es === Cipherly.EncryptionScheme.Password}
+        <Password
+          bind:value={password}
+          error={decryptionError && decryptionError.name === "OperationError"
+            ? "Invalid Password"
+            : null}
+        />
+      {:else if formData.payload?.es === Cipherly.EncryptionScheme.Auth}
+        <Auth />
+      {/if}
+
+      <div class="pt-4">
+        <Button class="min-w-[140px] text-lg font-bold" type="submit">
+          Decrypt
+        </Button>
+      </div>
+    </form>
   </Section>
 
   {#if plainText}
     <Section title="Decrypted Content">
-      {#await plainText}
+      {#if loading}
         <div class="space-y-6 py-6">
           <Skeleton class="h-20 w-full" />
           <Skeleton class="h-10 w-full" />
         </div>
-      {:then plainText}
+      {/if}
+
+      {#if plainText}
         <div class="space-y-2">
           <Label
             class="text-background-foreground text-sm uppercase tracking-wider"
@@ -113,18 +195,7 @@
           />
         </div>
         <CopyText label="Plaintext" text={plainText} />
-      {:catch err}
-        <Alert.Root variant="destructive" class="space-y-2 rounded">
-          <Alert.Title>Failed to Decrypt</Alert.Title>
-          <Alert.Description>
-            {#if err.status === 401}
-              Unauthorized
-            {:else if err.name === "OperationError"}
-              Invalid password
-            {/if}
-          </Alert.Description>
-        </Alert.Root>
-      {/await}
+      {/if}
     </Section>
   {/if}
 </div>
