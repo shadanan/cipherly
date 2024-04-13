@@ -1,11 +1,4 @@
-import { ZodError, z } from "zod";
-
-// Checkout https://github.com/colinhacks/zod for example validation logic
-export const AuthEncryptFormSchema = z.object({
-  emails: z.array(z.string().email().endsWith("@gmail.com")),
-  plainText: z.string().min(1),
-});
-export type AuthEncryptFormData = z.infer<typeof AuthEncryptFormSchema>;
+import { ZodError } from "zod";
 
 export function hasError(
   validationError: ZodError | undefined,

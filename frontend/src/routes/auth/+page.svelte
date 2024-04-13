@@ -10,12 +10,13 @@
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
-  import {
-    type AuthEncryptFormData,
-    AuthEncryptFormSchema,
-    getError,
-    hasError,
-  } from "$lib/form";
+  import { getError, hasError } from "$lib/form";
+
+  const AuthEncryptFormSchema = z.object({
+    emails: z.array(z.string().email().endsWith("@gmail.com")),
+    plainText: z.string().min(1).max(20),
+  });
+  type AuthEncryptFormData = z.infer<typeof AuthEncryptFormSchema>;
 
   let validationError: z.ZodError | undefined;
   let formData: AuthEncryptFormData = {
