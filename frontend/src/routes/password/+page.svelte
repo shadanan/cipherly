@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as Cipherly from "$lib/cipherly";
   import CopyText from "$lib/components/CopyText.svelte";
+  import Section from "$lib/components/Section.svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
@@ -28,13 +29,7 @@
 </script>
 
 <div class="space-y-8">
-  <div
-    class="border-background-foreground space-y-6 rounded-md border-2 bg-background p-8"
-  >
-    <div>
-      <h1 class="text-xl font-bold text-foreground">Password Encrypt</h1>
-    </div>
-
+  <Section title="Password Encrypt">
     <form
       class="space-y-6"
       on:submit|preventDefault={() => (payload = encrypt(plainText, password))}
@@ -72,16 +67,10 @@
         </Button>
       </div>
     </form>
-  </div>
+  </Section>
 
   {#if payload}
-    <div
-      class="border-background-foreground space-y-6 rounded-md border-2 bg-card p-8"
-    >
-      <div>
-        <h1 class="text-xl font-bold text-foreground">Encrypted Content</h1>
-      </div>
-
+    <Section title="Encrypted Content">
       {#await payload}
         <div class="space-y-6 py-6">
           <Skeleton class="h-20 w-full" />
@@ -114,6 +103,6 @@
           </Alert.Description>
         </Alert.Root>
       {/await}
-    </div>
+    </Section>
   {/if}
 </div>
