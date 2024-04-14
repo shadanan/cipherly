@@ -66,7 +66,7 @@
       : null;
 
     if (formData.payload?.es === Cipherly.EncryptionScheme.Auth) {
-      return await Cipherly.authDecrypt(formData.payload, $token as string);
+      return await Cipherly.authDecrypt(formData.payload, $token!);
     }
     if (formData.payload?.es === Cipherly.EncryptionScheme.Password) {
       return await Cipherly.passwordDecrypt(formData.payload, password);
