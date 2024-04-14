@@ -37,7 +37,6 @@
     .refine((payload) => payload?.hasOwnProperty("es"), {
       message: "Invalid Cipherly payload (missing encryption scheme)",
     })
-
     .refine(
       (payload) => {
         if (payload?.es === Cipherly.EncryptionScheme.Password) {
