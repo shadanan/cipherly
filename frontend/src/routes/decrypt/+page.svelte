@@ -161,19 +161,11 @@
           for="payload">Ciphertext Payload</Label
         >
 
-        {#if hasError(validationError, "payload") || hasError(validationError, "encodedPayload")}
+        {#if hasError(validationError, "payload")}
           {@const payloadErr = getError(validationError, "payload")}
-          {@const encodedPayloadErr = getError(
-            validationError,
-            "encodedPayload",
-          )}
           <p class="flex items-center space-x-1 text-xs text-destructive">
             <AlertCircle class="inline-block h-[12px] w-[12px]"></AlertCircle>
-            {#if encodedPayloadErr}
-              <span>{encodedPayloadErr}</span>
-            {:else}
-              <span>{payloadErr}</span>
-            {/if}
+            <span>{payloadErr}</span>
           </p>
         {/if}
 
