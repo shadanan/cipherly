@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { z } from "zod";
+  import { ZodError, z } from "zod";
   import { renderLoginButton, token } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
   import CopyText from "$lib/components/CopyText.svelte";
@@ -19,84 +19,122 @@
     renderLoginButton(document.getElementById("login-button"));
   });
 
-  const DecryptFormSchema = z.object({
-    encodedPayload: z.string().min(1),
-    payload: z
-      .custom<Cipherly.Payload | null>()
-      .refine((payload) => {
-        // version validation
-        return true; // valid
-      }, "wrong version")
-      .refine((payload) => {
-        // validate another thing
-        return true; // valid
-      }, "something else"),
-  });
+  const DecryptFormSchema = z
+    .string()
+    .min(1)
+    .transform((encodedPayload, ctx) => {
+      try {
+        return Cipherly.decodePayload(encodedPayload);
+      } catch (err) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid Cipherly payload",
+          path: ["payload"],
+        });
+      }
+      return null;
+    })
+    .refine((payload) => payload?.hasOwnProperty("es"), {
+      message: "Invalid Cipherly payload (missing encryption scheme)",
+    })
+
+    .refine(
+      (payload) => {
+        if (payload?.es === Cipherly.EncryptionScheme.Password) {
+          return (
+            payload?.hasOwnProperty("s") &&
+            payload?.hasOwnProperty("iv") &&
+            payload?.hasOwnProperty("ct")
+          );
+        }
+        return true;
+      },
+      {
+        message:
+          "Invalid Cipherly payload (missing salt (s) / initialization " +
+          "vector (iv) / ciphertext (ct))",
+      },
+    )
+    .refine(
+      (payload) => {
+        if (payload?.es === Cipherly.EncryptionScheme.Auth) {
+          return (
+            payload?.hasOwnProperty("k") &&
+            payload?.hasOwnProperty("n") &&
+            payload?.hasOwnProperty("se") &&
+            payload?.hasOwnProperty("iv") &&
+            payload?.hasOwnProperty("ct")
+          );
+        }
+        return true;
+      },
+      {
+        message:
+          "Invalid Cipherly payload (missing nonce (n) / sealed envelope (se) " +
+          "/ kid (k) / initialization vector (iv) / ciphertext (ct))",
+      },
+    );
   type DecryptFormData = z.infer<typeof DecryptFormSchema>;
 
-  let validationError: z.ZodError | undefined;
-  let formData: DecryptFormData = {
-    encodedPayload: "",
-    payload: null,
-  };
+  let encodedPayload: string | null;
+  let payload: DecryptFormData = null;
 
+  let validationError: z.ZodError | null;
+  let password = "";
   let loading = false;
   let plainText: string | null = null;
   let decryptionError: any = null;
-  let password = "";
 
   if (location.hash) {
-    formData.encodedPayload = location.href;
+    encodedPayload = location.href;
   }
 
   $: {
-    try {
-      formData.payload = formData.encodedPayload
-        ? Cipherly.decodePayload(formData.encodedPayload)
-        : null;
-      decryptionError = null;
-    } catch (err) {
-      decryptionError = err;
+    decryptionError = null;
+    plainText = null;
+    if (encodedPayload && encodedPayload.trim() !== "") {
+      try {
+        payload = DecryptFormSchema.parse(encodedPayload);
+        validationError = null;
+      } catch (err) {
+        validationError = err as ZodError;
+        payload = null;
+      }
+    } else {
+      validationError = null;
     }
   }
 
-  async function decrypt(formData: DecryptFormData): Promise<string | null> {
-    formData.payload = formData.encodedPayload
-      ? Cipherly.decodePayload(formData.encodedPayload)
-      : null;
-
-    if (formData.payload?.es === Cipherly.EncryptionScheme.Auth) {
-      return await Cipherly.authDecrypt(formData.payload, $token!);
+  async function decrypt(payload: DecryptFormData): Promise<string | null> {
+    if (payload?.es === Cipherly.EncryptionScheme.Auth) {
+      return await Cipherly.authDecrypt(payload, $token!);
     }
-    if (formData.payload?.es === Cipherly.EncryptionScheme.Password) {
-      return await Cipherly.passwordDecrypt(formData.payload, password);
+    if (payload?.es === Cipherly.EncryptionScheme.Password) {
+      return await Cipherly.passwordDecrypt(payload, password);
     }
-    return Promise.resolve(null);
+    throw new Error("Invalid Encryption Scheme");
   }
 
-  function validateFormData(formData: DecryptFormData): boolean {
-    const validationResult = DecryptFormSchema.safeParse(formData);
-    validationError = validationResult.success
-      ? undefined
-      : validationResult.error;
-    return validationResult.success;
+  function encryptionTitle(payload: Cipherly.Payload | null): string {
+    let baseTitle = "Decrypt";
+    if (!payload) return baseTitle;
+    const scheme = Cipherly.EncryptionScheme[payload.es];
+    if (!scheme) return baseTitle;
+    return `${scheme} ${baseTitle}`;
   }
 </script>
 
 <div class="space-y-8">
-  <Section
-    title="{formData.payload
-      ? Cipherly.EncryptionScheme[formData.payload.es]
-      : ''} Decrypt"
-  >
+  <Section title={encryptionTitle(payload)}>
     <form
       class="space-y-6"
       on:submit|preventDefault={async () => {
         plainText = null;
-        if (!validateFormData(formData)) return;
+        if (validationError) return;
+
         loading = true;
         try {
-          plainText = await decrypt(formData);
+          plainText = await decrypt(payload);
           decryptionError = null;
         } catch (e) {
           decryptionError = e;
@@ -145,19 +183,19 @@
           minlength={1}
           class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
           id="payload"
-          bind:value={formData.encodedPayload}
+          bind:value={encodedPayload}
           placeholder="The ciphertext payload to be decrypted"
         />
       </div>
 
-      {#if formData.payload?.es === Cipherly.EncryptionScheme.Password}
+      {#if payload?.es === Cipherly.EncryptionScheme.Password}
         <Password
           bind:value={password}
           error={decryptionError && decryptionError.name === "OperationError"
             ? "Invalid Password"
             : null}
         />
-      {:else if formData.payload?.es === Cipherly.EncryptionScheme.Auth}
+      {:else if payload?.es === Cipherly.EncryptionScheme.Auth}
         <Auth />
       {/if}
 

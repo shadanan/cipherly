@@ -18,7 +18,7 @@
   });
   type AuthEncryptFormData = z.infer<typeof AuthEncryptFormSchema>;
 
-  let validationError: z.ZodError | undefined;
+  let validationError: z.ZodError | null;
   let formData: AuthEncryptFormData = {
     plainText: "",
     emails: [],
@@ -26,9 +26,7 @@
 
   function validateFormData(formData: AuthEncryptFormData): boolean {
     const validationResult = AuthEncryptFormSchema.safeParse(formData);
-    validationError = validationResult.success
-      ? undefined
-      : validationResult.error;
+    validationError = validationResult.success ? null : validationResult.error;
     return validationResult.success;
   }
 

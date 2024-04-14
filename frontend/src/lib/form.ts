@@ -1,7 +1,7 @@
 import { ZodError } from "zod";
 
 export function hasError(
-  validationError: ZodError | undefined,
+  validationError: ZodError | null,
   property: string,
 ): boolean {
   if (!validationError || validationError.isEmpty) return false;
@@ -9,7 +9,7 @@ export function hasError(
 }
 
 export function getError(
-  validationError: ZodError | undefined,
+  validationError: ZodError | null,
   property: string,
 ): string | null {
   if (!validationError || validationError.isEmpty) return null;
