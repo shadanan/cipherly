@@ -1,7 +1,5 @@
 <script lang="ts">
-  import { z } from "zod";
-  import { AlertCircle } from "lucide-svelte";
-  import * as Cipherly from "$lib/cipherly";
+  import { authEncrypt } from "$lib/cipherly";
   import Chip from "$lib/components/Chip.svelte";
   import CopyText from "$lib/components/CopyText.svelte";
   import Section from "$lib/components/Section.svelte";
@@ -11,10 +9,12 @@
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
   import { getError, hasError } from "$lib/form";
+  import { AlertCircle } from "lucide-svelte";
+  import { z } from "zod";
 
   const AuthEncryptFormSchema = z.object({
-    emails: z.array(z.string().email().endsWith("@gmail.com")),
-    plainText: z.string().min(1).max(20),
+    emails: z.array(z.string().email()).min(1),
+    plainText: z.string().min(1),
   });
   type AuthEncryptFormData = z.infer<typeof AuthEncryptFormSchema>;
 
@@ -31,24 +31,6 @@
   }
 
   let payload: Promise<string> | null = null;
-
-  async function encrypt(plainText: string, emails: string[]): Promise<string> {
-    const dek = await Cipherly.generateKey();
-    const iv = Cipherly.generateIv();
-    const cipherText = await Cipherly.encrypt(
-      Cipherly.encodeUtf8(plainText),
-      dek,
-      iv,
-    );
-    const { kid, nonce, data } = await Cipherly.seal({ dek, emails });
-    return Cipherly.encodeAuthPayload({
-      k: kid,
-      n: nonce,
-      se: data,
-      iv: iv,
-      ct: cipherText,
-    });
-  }
 </script>
 
 <div class="space-y-8">
@@ -57,7 +39,7 @@
       class="space-y-6"
       on:submit|preventDefault={() => {
         if (validateFormData(formData)) {
-          payload = encrypt(formData.plainText, formData.emails);
+          payload = authEncrypt(formData.plainText, formData.emails);
         }
       }}
     >

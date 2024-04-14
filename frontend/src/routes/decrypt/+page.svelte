@@ -1,5 +1,4 @@
 <script lang="ts">
-  import { ZodError, z } from "zod";
   import { renderLoginButton, token } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
   import CopyText from "$lib/components/CopyText.svelte";
@@ -9,11 +8,12 @@
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
   import { Textarea } from "$lib/components/ui/textarea";
-  import { onMount } from "svelte";
-  import Auth from "./auth.svelte";
-  import Password from "./password.svelte";
   import { getError, hasError } from "$lib/form";
   import { AlertCircle } from "lucide-svelte";
+  import { onMount } from "svelte";
+  import { ZodError, z } from "zod";
+  import Auth from "./auth.svelte";
+  import Password from "./password.svelte";
 
   onMount(() => {
     renderLoginButton(document.getElementById("login-button"));
@@ -24,8 +24,16 @@
     .min(1)
     .transform((encodedPayload, ctx) => {
       try {
-        return Cipherly.decodePayload(encodedPayload);
+        const payload = Cipherly.decodePayload(encodedPayload);
+        if (
+          !Cipherly.isPasswordPayload(payload) &&
+          !Cipherly.isAuthPayload(payload)
+        ) {
+          throw `Invalid Cipherly payload: ${payload}`;
+        }
+        return payload;
       } catch (err) {
+        console.log(err);
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Invalid Cipherly payload",
@@ -33,46 +41,7 @@
         });
       }
       return null;
-    })
-    .refine((payload) => payload?.hasOwnProperty("es"), {
-      message: "Invalid Cipherly payload (missing encryption scheme)",
-    })
-    .refine(
-      (payload) => {
-        if (payload?.es === Cipherly.EncryptionScheme.Password) {
-          return (
-            payload?.hasOwnProperty("s") &&
-            payload?.hasOwnProperty("iv") &&
-            payload?.hasOwnProperty("ct")
-          );
-        }
-        return true;
-      },
-      {
-        message:
-          "Invalid Cipherly payload (missing salt (s) / initialization " +
-          "vector (iv) / ciphertext (ct))",
-      },
-    )
-    .refine(
-      (payload) => {
-        if (payload?.es === Cipherly.EncryptionScheme.Auth) {
-          return (
-            payload?.hasOwnProperty("k") &&
-            payload?.hasOwnProperty("n") &&
-            payload?.hasOwnProperty("se") &&
-            payload?.hasOwnProperty("iv") &&
-            payload?.hasOwnProperty("ct")
-          );
-        }
-        return true;
-      },
-      {
-        message:
-          "Invalid Cipherly payload (missing nonce (n) / sealed envelope (se) " +
-          "/ kid (k) / initialization vector (iv) / ciphertext (ct))",
-      },
-    );
+    });
   type DecryptFormData = z.infer<typeof DecryptFormSchema>;
 
   let encodedPayload: string | null;
@@ -142,19 +111,6 @@
         }
       }}
     >
-      {#if decryptionError && decryptionError.name !== "OperationError"}
-        <Alert.Root variant="destructive" class="space-y-2 rounded">
-          <Alert.Title>Failed to Decrypt</Alert.Title>
-          <Alert.Description>
-            {#if decryptionError.status === 401}
-              Unauthorized
-            {:else}
-              Invalid Payload
-            {/if}
-          </Alert.Description>
-        </Alert.Root>
-      {/if}
-
       <div class="space-y-2">
         <Label
           class="text-background-foreground text-sm uppercase tracking-wider"
@@ -180,12 +136,7 @@
       </div>
 
       {#if payload?.es === Cipherly.EncryptionScheme.Password}
-        <Password
-          bind:value={password}
-          error={decryptionError && decryptionError.name === "OperationError"
-            ? "Invalid Password"
-            : null}
-        />
+        <Password bind:value={password} />
       {:else if payload?.es === Cipherly.EncryptionScheme.Auth}
         <Auth />
       {/if}
@@ -198,13 +149,28 @@
     </form>
   </Section>
 
-  {#if plainText}
+  {#if plainText || decryptionError}
     <Section title="Decrypted Content">
       {#if loading}
         <div class="space-y-6 py-6">
           <Skeleton class="h-20 w-full" />
           <Skeleton class="h-10 w-full" />
         </div>
+      {/if}
+
+      {#if decryptionError}
+        <Alert.Root variant="destructive" class="space-y-2 rounded">
+          <Alert.Title>Failed to Decrypt</Alert.Title>
+          <Alert.Description>
+            {#if decryptionError.status === 401}
+              Unauthorized
+            {:else if decryptionError.name === "OperationError"}
+              Incorrect Password
+            {:else}
+              {JSON.stringify(decryptionError)}
+            {/if}
+          </Alert.Description>
+        </Alert.Root>
       {/if}
 
       {#if plainText}
