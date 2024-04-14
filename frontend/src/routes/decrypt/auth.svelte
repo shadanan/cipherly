@@ -1,24 +1,14 @@
 <script lang="ts">
   import googleLogo from "$lib/assets/google.svg";
   import { logout, renderLoginButton, token, user } from "$lib/auth";
-  import * as Cipherly from "$lib/cipherly";
   import Avatar from "$lib/components/Avatar.svelte";
   import { Button } from "$lib/components/ui/button";
   import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
   import { onMount } from "svelte";
 
-  export let payload: Cipherly.AuthPayload;
-
   onMount(() => {
     renderLoginButton(document.getElementById("login-button"));
   });
-
-  export async function decrypt(): Promise<string> {
-    const { k: kid, n: nonce, se: data, iv: iv, ct: cipherText } = payload;
-    const envelope = await Cipherly.unseal({ kid, nonce, data }, $token!);
-    const plainText = await Cipherly.decrypt(cipherText, envelope.dek, iv);
-    return Cipherly.decodeUtf8(plainText);
-  }
 </script>
 
 <div class={$user === null ? "" : "hidden"}>

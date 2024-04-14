@@ -1,5 +1,5 @@
 <script lang="ts">
-  import * as Cipherly from "$lib/cipherly";
+  import { passwordEncrypt } from "$lib/cipherly";
   import CopyText from "$lib/components/CopyText.svelte";
   import Section from "$lib/components/Section.svelte";
   import * as Alert from "$lib/components/ui/alert";
@@ -12,27 +12,14 @@
   let plainText = "";
   let password = "";
   let payload: Promise<string> | null = null;
-
-  async function encrypt(plainText: string, password: string): Promise<string> {
-    const salt = Cipherly.generateSalt();
-    const key = await Cipherly.deriveKey(Cipherly.encodeUtf8(password), salt);
-
-    const iv = Cipherly.generateIv();
-    const cipherText = await Cipherly.encrypt(
-      Cipherly.encodeUtf8(plainText),
-      key,
-      iv,
-    );
-
-    return Cipherly.encodePasswordPayload({ s: salt, iv: iv, ct: cipherText });
-  }
 </script>
 
 <div class="space-y-8">
   <Section title="Password Encrypt">
     <form
       class="space-y-6"
-      on:submit|preventDefault={() => (payload = encrypt(plainText, password))}
+      on:submit|preventDefault={() =>
+        (payload = passwordEncrypt(plainText, password))}
     >
       <div class="space-y-2">
         <Label

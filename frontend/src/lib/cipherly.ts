@@ -56,35 +56,6 @@ function extractHash(data: string): string {
   return data;
 }
 
-export enum EncryptionScheme {
-  Password = 0,
-  Auth = 1,
-}
-
-type PayloadHeader = {
-  es: EncryptionScheme;
-};
-
-type PasswordBody = {
-  s: Uint8Array; // salt
-  iv: Uint8Array; // initialization vector
-  ct: Uint8Array; // ciphertext
-};
-
-export type PasswordPayload = PayloadHeader & PasswordBody;
-
-export function encodePasswordPayload(payload: PasswordBody): string {
-  const msgPackPayload: PasswordPayload = {
-    es: EncryptionScheme.Password,
-    ...payload,
-  };
-  return decryptUrl(encodeMessagePack(msgPackPayload));
-}
-
-export function decodePasswordPayload(data: string): PasswordPayload {
-  return decodeMessagePack(extractHash(data)) as PasswordPayload;
-}
-
 export async function deriveKey(
   password: Uint8Array,
   salt: Uint8Array,
@@ -131,6 +102,69 @@ export async function decrypt(
   );
 }
 
+export enum EncryptionScheme {
+  Password = 0,
+  Auth = 1,
+}
+
+type PayloadHeader = {
+  es: EncryptionScheme;
+};
+
+type PasswordBody = {
+  s: Uint8Array; // salt
+  iv: Uint8Array; // initialization vector
+  ct: Uint8Array; // ciphertext
+};
+
+export type PasswordPayload = PayloadHeader & PasswordBody;
+
+export function isPasswordPayload(payload: any): payload is PasswordPayload {
+  return (
+    typeof payload === "object" &&
+    "es" in payload &&
+    payload.es === EncryptionScheme.Password &&
+    "s" in payload &&
+    "iv" in payload &&
+    "ct" in payload
+  );
+}
+
+export function encodePasswordPayload(payload: PasswordBody): string {
+  const msgPackPayload: PasswordPayload = {
+    es: EncryptionScheme.Password,
+    ...payload,
+  };
+  return decryptUrl(encodeMessagePack(msgPackPayload));
+}
+
+export function decodePasswordPayload(data: string): PasswordPayload {
+  return decodeMessagePack(extractHash(data)) as PasswordPayload;
+}
+
+export async function passwordEncrypt(
+  plainText: string,
+  password: string,
+): Promise<string> {
+  const salt = generateSalt();
+  const key = await deriveKey(encodeUtf8(password), salt);
+
+  const iv = generateIv();
+  const cipherText = await encrypt(encodeUtf8(plainText), key, iv);
+
+  return encodePasswordPayload({ s: salt, iv: iv, ct: cipherText });
+}
+
+export async function passwordDecrypt(
+  payload: Payload,
+  password: string,
+): Promise<string> {
+  const { s: salt, iv: iv, ct: cipherText } = payload as PasswordPayload;
+  const key = await deriveKey(encodeUtf8(password), salt);
+  const plainText = await decrypt(cipherText, key, iv);
+  return decodeUtf8(plainText);
+}
+
 type AuthBody = {
   k: string; // kid
   n: Uint8Array; // nonce
@@ -140,6 +174,19 @@ type AuthBody = {
 };
 
 export type AuthPayload = PayloadHeader & AuthBody;
+
+export function isAuthPayload(payload: any): payload is AuthPayload {
+  return (
+    typeof payload === "object" &&
+    "es" in payload &&
+    payload.es === EncryptionScheme.Auth &&
+    "k" in payload &&
+    "n" in payload &&
+    "se" in payload &&
+    "iv" in payload &&
+    "ct" in payload
+  );
+}
 
 export function encodeAuthPayload(payload: AuthBody): string {
   const msgPackPayload: AuthPayload = {
@@ -222,4 +269,37 @@ export async function unseal(
   );
 
   return { dek, emails: result.emails };
+}
+
+export async function authEncrypt(
+  plainText: string,
+  emails: string[],
+): Promise<string> {
+  const dek = await generateKey();
+  const iv = generateIv();
+  const cipherText = await encrypt(encodeUtf8(plainText), dek, iv);
+  const { kid, nonce, data } = await seal({ dek, emails });
+  return encodeAuthPayload({
+    k: kid,
+    n: nonce,
+    se: data,
+    iv: iv,
+    ct: cipherText,
+  });
+}
+
+export async function authDecrypt(
+  payload: Payload,
+  token: string,
+): Promise<string> {
+  const {
+    k: kid,
+    n: nonce,
+    se: data,
+    iv: iv,
+    ct: cipherText,
+  } = payload as AuthPayload;
+  const envelope = await unseal({ kid, nonce, data }, token);
+  const plainText = await decrypt(cipherText, envelope.dek, iv);
+  return decodeUtf8(plainText);
 }
