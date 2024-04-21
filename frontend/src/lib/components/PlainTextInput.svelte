@@ -46,7 +46,7 @@
 {:else}
   <Textarea
     class={cn(
-      "border-2   text-base text-foreground focus:ring-0 focus-visible:ring-0 ",
+      "border-2 text-base text-foreground focus:ring-0 focus-visible:ring-0 ",
       className,
     )}
     {id}
