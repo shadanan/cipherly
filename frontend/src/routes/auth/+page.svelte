@@ -2,8 +2,9 @@
   import { authEncrypt } from "$lib/cipherly";
   import Chip from "$lib/components/Chip.svelte";
   import CopyText from "$lib/components/CopyText.svelte";
+  import EncryptionAlert from "$lib/components/EncryptionAlert.svelte";
   import Section from "$lib/components/Section.svelte";
-  import * as Alert from "$lib/components/ui/alert";
+  import PlainTextInput from "$lib/components/PlainTextInput.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
@@ -12,15 +13,22 @@
   import { AlertCircle } from "lucide-svelte";
   import { z } from "zod";
 
-  const AuthEncryptFormSchema = z.object({
-    emails: z.array(z.string().email()).min(1),
-    plainText: z.string().min(1),
-  });
+  const AuthEncryptFormSchema = z
+    .object({
+      emails: z.array(z.string().email()).min(1),
+      plainText: z.string().optional(),
+      plainFile: z.custom<File | undefined>(),
+    })
+    .refine(({ plainFile, plainText }) => !!plainText || !!plainFile, {
+      message: "Either a plain text or a file must be provided.",
+      path: ["plainText"],
+    });
   type AuthEncryptFormData = z.infer<typeof AuthEncryptFormSchema>;
 
   let validationError: z.ZodError | null;
   let formData: AuthEncryptFormData = {
     plainText: "",
+    plainFile: undefined,
     emails: [],
   };
 
@@ -39,7 +47,11 @@
       class="space-y-6"
       on:submit|preventDefault={() => {
         if (validateFormData(formData)) {
-          payload = authEncrypt(formData.plainText, formData.emails);
+          payload = authEncrypt(
+            formData.plainText,
+            formData.plainFile,
+            formData.emails,
+          );
         }
       }}
     >
@@ -59,12 +71,9 @@
           </p>
         {/if}
 
-        <Textarea
-          required
-          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-          id="plainText"
-          bind:value={formData.plainText}
-          placeholder="The plaintext secret to encrypt"
+        <PlainTextInput
+          bind:plainText={formData.plainText}
+          bind:plainFile={formData.plainFile}
         />
       </div>
 
@@ -132,12 +141,7 @@
           <CopyText label="Ciphertext" text={payload} />
         </div>
       {:catch error}
-        <Alert.Root variant="destructive" class="space-y-2 rounded">
-          <Alert.Title>Failed to Encrypt</Alert.Title>
-          <Alert.Description>
-            {error.message}
-          </Alert.Description>
-        </Alert.Root>
+        <EncryptionAlert {error} />
       {/await}
     </Section>
   {/if}

@@ -1,6 +1,8 @@
 <script lang="ts">
   import { passwordEncrypt } from "$lib/cipherly";
   import CopyText from "$lib/components/CopyText.svelte";
+  import EncryptionAlert from "$lib/components/EncryptionAlert.svelte";
+  import PlainTextInput from "$lib/components/PlainTextInput.svelte";
   import Section from "$lib/components/Section.svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
@@ -8,9 +10,35 @@
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { Textarea } from "$lib/components/ui/textarea";
+  import { getError } from "$lib/form";
+  import { AlertCircle } from "lucide-svelte";
+  import { z } from "zod";
 
-  let plainText = "";
-  let password = "";
+  const PasswordEncryptFormSchema = z
+    .object({
+      plainText: z.string().optional(),
+      plainFile: z.custom<File | undefined>(),
+      password: z.string().default(""),
+    })
+    .refine(({ plainFile, plainText }) => !!plainText || !!plainFile, {
+      message: "Either a plain text or a file must be provided.",
+      path: ["plainText"],
+    });
+
+  type PasswordEncryptFormData = z.infer<typeof PasswordEncryptFormSchema>;
+
+  let validationError: z.ZodError | null;
+  let formData: PasswordEncryptFormData = {
+    plainText: "",
+    plainFile: undefined,
+    password: "",
+  };
+
+  function validateFormData(formData: PasswordEncryptFormData): boolean {
+    const validationResult = PasswordEncryptFormSchema.safeParse(formData);
+    validationError = validationResult.success ? null : validationResult.error;
+    return validationResult.success;
+  }
   let payload: Promise<string> | null = null;
 </script>
 
@@ -18,20 +46,35 @@
   <Section title="Password Encrypt">
     <form
       class="space-y-6"
-      on:submit|preventDefault={() =>
-        (payload = passwordEncrypt(plainText, password))}
+      on:submit|preventDefault={() => {
+        if (validateFormData(formData)) {
+          payload = passwordEncrypt(
+            formData.plainText,
+            formData.plainFile,
+            formData.password,
+          );
+        }
+      }}
     >
       <div class="space-y-2">
         <Label
+          for="plainText"
           class="text-background-foreground text-sm uppercase tracking-wider"
-          for="plainText">Plaintext</Label
         >
-        <Textarea
-          required
-          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-          id="plainText"
-          bind:value={plainText}
-          placeholder="The plaintext secret to encrypt"
+          Plaintext
+        </Label>
+
+        <!-- PlainText Validation Error  -->
+        {#if getError(validationError, "plainText")}
+          <p class="flex items-center space-x-1 text-xs text-destructive">
+            <AlertCircle class="inline-block h-[12px] w-[12px]"></AlertCircle>
+            <span>{getError(validationError, "plainText")}</span>
+          </p>
+        {/if}
+
+        <PlainTextInput
+          bind:plainText={formData.plainText}
+          bind:plainFile={formData.plainFile}
         />
       </div>
 
@@ -44,7 +87,7 @@
           id="password"
           class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
           placeholder="The password to use for encryption"
-          bind:value={password}
+          bind:value={formData.password}
         />
       </div>
 
@@ -83,12 +126,7 @@
           <CopyText label="Ciphertext" text={payload} />
         </div>
       {:catch error}
-        <Alert.Root variant="destructive" class="space-y-2 rounded">
-          <Alert.Title>Failed to Encrypt</Alert.Title>
-          <Alert.Description>
-            {error.message}
-          </Alert.Description>
-        </Alert.Root>
+        <EncryptionAlert {error} />
       {/await}
     </Section>
   {/if}

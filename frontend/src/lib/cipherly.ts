@@ -143,16 +143,22 @@ export function decodePasswordPayload(data: string): PasswordPayload {
 }
 
 export async function passwordEncrypt(
-  plainText: string,
+  plainText: string | undefined,
+  plainFile: File | undefined,
   password: string,
 ): Promise<string> {
-  const salt = generateSalt();
-  const key = await deriveKey(encodeUtf8(password), salt);
+  if (plainFile) {
+    throw "Password file encryption not supported";
+  } else if (plainText) {
+    const salt = generateSalt();
+    const key = await deriveKey(encodeUtf8(password), salt);
 
-  const iv = generateIv();
-  const cipherText = await encrypt(encodeUtf8(plainText), key, iv);
+    const iv = generateIv();
+    const cipherText = await encrypt(encodeUtf8(plainText!), key, iv);
 
-  return encodePasswordPayload({ s: salt, iv: iv, ct: cipherText });
+    return encodePasswordPayload({ s: salt, iv: iv, ct: cipherText });
+  }
+  throw "Invalid password encryption input";
 }
 
 export async function passwordDecrypt(
@@ -272,20 +278,26 @@ export async function unseal(
 }
 
 export async function authEncrypt(
-  plainText: string,
+  plainText: string | undefined,
+  plainFile: File | undefined,
   emails: string[],
 ): Promise<string> {
-  const dek = await generateKey();
-  const iv = generateIv();
-  const cipherText = await encrypt(encodeUtf8(plainText), dek, iv);
-  const { kid, nonce, data } = await seal({ dek, emails });
-  return encodeAuthPayload({
-    k: kid,
-    n: nonce,
-    se: data,
-    iv: iv,
-    ct: cipherText,
-  });
+  if (plainFile) {
+    throw "Auth file encryption not supported";
+  } else if (plainText) {
+    const dek = await generateKey();
+    const iv = generateIv();
+    const cipherText = await encrypt(encodeUtf8(plainText), dek, iv);
+    const { kid, nonce, data } = await seal({ dek, emails });
+    return encodeAuthPayload({
+      k: kid,
+      n: nonce,
+      se: data,
+      iv: iv,
+      ct: cipherText,
+    });
+  }
+  throw "Invalid auth encryption input";
 }
 
 export async function authDecrypt(
