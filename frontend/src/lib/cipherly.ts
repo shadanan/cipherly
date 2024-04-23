@@ -143,32 +143,25 @@ export function decodePasswordPayload(data: string): PasswordPayload {
 }
 
 export async function passwordEncrypt(
-  plainText: string | undefined,
-  plainFile: File | undefined,
+  plainText: Uint8Array,
   password: string,
 ): Promise<string> {
-  if (plainFile) {
-    throw "Password file encryption not supported";
-  } else if (plainText) {
-    const salt = generateSalt();
-    const key = await deriveKey(encodeUtf8(password), salt);
+  const salt = generateSalt();
+  const key = await deriveKey(encodeUtf8(password), salt);
 
-    const iv = generateIv();
-    const cipherText = await encrypt(encodeUtf8(plainText!), key, iv);
+  const iv = generateIv();
+  const cipherText = await encrypt(plainText!, key, iv);
 
-    return encodePasswordPayload({ s: salt, iv: iv, ct: cipherText });
-  }
-  throw "Invalid password encryption input";
+  return encodePasswordPayload({ s: salt, iv: iv, ct: cipherText });
 }
 
 export async function passwordDecrypt(
   payload: Payload,
   password: string,
-): Promise<string> {
+): Promise<Uint8Array> {
   const { s: salt, iv: iv, ct: cipherText } = payload as PasswordPayload;
   const key = await deriveKey(encodeUtf8(password), salt);
-  const plainText = await decrypt(cipherText, key, iv);
-  return decodeUtf8(plainText);
+  return await decrypt(cipherText, key, iv);
 }
 
 type AuthBody = {
@@ -278,32 +271,26 @@ export async function unseal(
 }
 
 export async function authEncrypt(
-  plainText: string | undefined,
-  plainFile: File | undefined,
+  plainText: Uint8Array,
   emails: string[],
 ): Promise<string> {
-  if (plainFile) {
-    throw "Auth file encryption not supported";
-  } else if (plainText) {
-    const dek = await generateKey();
-    const iv = generateIv();
-    const cipherText = await encrypt(encodeUtf8(plainText), dek, iv);
-    const { kid, nonce, data } = await seal({ dek, emails });
-    return encodeAuthPayload({
-      k: kid,
-      n: nonce,
-      se: data,
-      iv: iv,
-      ct: cipherText,
-    });
-  }
-  throw "Invalid auth encryption input";
+  const dek = await generateKey();
+  const iv = generateIv();
+  const cipherText = await encrypt(plainText, dek, iv);
+  const { kid, nonce, data } = await seal({ dek, emails });
+  return encodeAuthPayload({
+    k: kid,
+    n: nonce,
+    se: data,
+    iv: iv,
+    ct: cipherText,
+  });
 }
 
 export async function authDecrypt(
   payload: Payload,
   token: string,
-): Promise<string> {
+): Promise<Uint8Array> {
   const {
     k: kid,
     n: nonce,
@@ -313,5 +300,5 @@ export async function authDecrypt(
   } = payload as AuthPayload;
   const envelope = await unseal({ kid, nonce, data }, token);
   const plainText = await decrypt(cipherText, envelope.dek, iv);
-  return decodeUtf8(plainText);
+  return plainText;
 }

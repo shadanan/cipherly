@@ -75,10 +75,12 @@
 
   async function decrypt(payload: DecryptFormData): Promise<string | null> {
     if (payload?.es === Cipherly.EncryptionScheme.Auth) {
-      return await Cipherly.authDecrypt(payload, $token!);
+      return Cipherly.decodeUtf8(await Cipherly.authDecrypt(payload, $token!));
     }
     if (payload?.es === Cipherly.EncryptionScheme.Password) {
-      return await Cipherly.passwordDecrypt(payload, password);
+      return Cipherly.decodeUtf8(
+        await Cipherly.passwordDecrypt(payload, password),
+      );
     }
     throw new Error("Invalid Encryption Scheme");
   }

@@ -4,7 +4,7 @@
   import CopyText from "$lib/components/CopyText.svelte";
   import EncryptionAlert from "$lib/components/EncryptionAlert.svelte";
   import Section from "$lib/components/Section.svelte";
-  import PlainTextInput from "$lib/components/PlainTextInput.svelte";
+  import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
@@ -13,22 +13,15 @@
   import { AlertCircle } from "lucide-svelte";
   import { z } from "zod";
 
-  const AuthEncryptFormSchema = z
-    .object({
-      emails: z.array(z.string().email()).min(1),
-      plainText: z.string().optional(),
-      plainFile: z.custom<File | undefined>(),
-    })
-    .refine(({ plainFile, plainText }) => !!plainText || !!plainFile, {
-      message: "Either a plain text or a file must be provided.",
-      path: ["plainText"],
-    });
+  const AuthEncryptFormSchema = z.object({
+    plainText: z.instanceof(Uint8Array).refine((v) => v.length > 0),
+    emails: z.array(z.string().email()).min(1),
+  });
   type AuthEncryptFormData = z.infer<typeof AuthEncryptFormSchema>;
 
   let validationError: z.ZodError | null;
   let formData: AuthEncryptFormData = {
-    plainText: "",
-    plainFile: undefined,
+    plainText: new Uint8Array(),
     emails: [],
   };
 
@@ -47,11 +40,7 @@
       class="space-y-6"
       on:submit|preventDefault={() => {
         if (validateFormData(formData)) {
-          payload = authEncrypt(
-            formData.plainText,
-            formData.plainFile,
-            formData.emails,
-          );
+          payload = authEncrypt(formData.plainText, formData.emails);
         }
       }}
     >
@@ -71,9 +60,9 @@
           </p>
         {/if}
 
-        <PlainTextInput
-          bind:plainText={formData.plainText}
-          bind:plainFile={formData.plainFile}
+        <TextOrFileInput
+          bind:data={formData.plainText}
+          placeholder="plaintext secret"
         />
       </div>
 

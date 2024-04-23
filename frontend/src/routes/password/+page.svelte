@@ -2,9 +2,8 @@
   import { passwordEncrypt } from "$lib/cipherly";
   import CopyText from "$lib/components/CopyText.svelte";
   import EncryptionAlert from "$lib/components/EncryptionAlert.svelte";
-  import PlainTextInput from "$lib/components/PlainTextInput.svelte";
   import Section from "$lib/components/Section.svelte";
-  import * as Alert from "$lib/components/ui/alert";
+  import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
@@ -14,23 +13,16 @@
   import { AlertCircle } from "lucide-svelte";
   import { z } from "zod";
 
-  const PasswordEncryptFormSchema = z
-    .object({
-      plainText: z.string().optional(),
-      plainFile: z.custom<File | undefined>(),
-      password: z.string().default(""),
-    })
-    .refine(({ plainFile, plainText }) => !!plainText || !!plainFile, {
-      message: "Either a plain text or a file must be provided.",
-      path: ["plainText"],
-    });
+  const PasswordEncryptFormSchema = z.object({
+    plainText: z.instanceof(Uint8Array).refine((v) => v.length > 0),
+    password: z.string().default(""),
+  });
 
   type PasswordEncryptFormData = z.infer<typeof PasswordEncryptFormSchema>;
 
   let validationError: z.ZodError | null;
   let formData: PasswordEncryptFormData = {
-    plainText: "",
-    plainFile: undefined,
+    plainText: new Uint8Array(),
     password: "",
   };
 
@@ -48,11 +40,7 @@
       class="space-y-6"
       on:submit|preventDefault={() => {
         if (validateFormData(formData)) {
-          payload = passwordEncrypt(
-            formData.plainText,
-            formData.plainFile,
-            formData.password,
-          );
+          payload = passwordEncrypt(formData.plainText, formData.password);
         }
       }}
     >
@@ -72,9 +60,9 @@
           </p>
         {/if}
 
-        <PlainTextInput
-          bind:plainText={formData.plainText}
-          bind:plainFile={formData.plainFile}
+        <TextOrFileInput
+          bind:data={formData.plainText}
+          placeholder="plaintext secret"
         />
       </div>
 
