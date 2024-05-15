@@ -5,14 +5,12 @@
     encodeUtf8,
     passwordEncrypt,
   } from "$lib/cipherly";
-  import EncryptionAlert from "$lib/components/EncryptionAlert.svelte";
   import Section from "$lib/components/Section.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { Skeleton } from "$lib/components/ui/skeleton/index.js";
   import { getError } from "$lib/form";
   import { AlertCircle } from "lucide-svelte";
   import { z } from "zod";
@@ -121,23 +119,13 @@
   </Section>
 
   {#if payload}
-    <Section title="Encrypted Content">
-      {#await payload}
-        <div class="space-y-6 py-6">
-          <Skeleton class="h-20 w-full" />
-          <Skeleton class="h-10 w-full" />
-        </div>
-      {:then payload}
-        <TextOrFileOutput
-          data={[
-            decryptUrl(),
-            formData.file ? payload : encodeUtf8(encodeBase64(payload)),
-          ]}
-          name={formData.file ? formData.file.name + ".cly" : null}
-        />
-      {:catch error}
-        <EncryptionAlert title="Failed to Encrypt" {error} />
-      {/await}
-    </Section>
+    <TextOrFileOutput
+      kind="Encrypt"
+      data={Promise.all([
+        decryptUrl(),
+        formData.file ? payload : payload.then(encodeBase64).then(encodeUtf8),
+      ])}
+      name={formData.file ? formData.file.name + ".cly" : null}
+    />
   {/if}
 </div>

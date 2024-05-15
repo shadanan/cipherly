@@ -1,13 +1,11 @@
 <script lang="ts">
   import { renderLoginButton, token } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
-  import EncryptionAlert from "$lib/components/EncryptionAlert.svelte";
   import Section from "$lib/components/Section.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
-  import { Skeleton } from "$lib/components/ui/skeleton";
   import { getError, hasError } from "$lib/form";
   import { AlertCircle } from "lucide-svelte";
   import { onMount } from "svelte";
@@ -90,15 +88,15 @@
 
   let validationError: z.ZodError | null;
   let password = "";
-  let plainText: Promise<Uint8Array> | null = null;
+  let plainText: Promise<Uint8Array[]> | null = null;
 
-  async function decrypt(payload: DecryptPayload): Promise<Uint8Array> {
+  async function decrypt(payload: DecryptPayload): Promise<Uint8Array[]> {
     console.log(payload);
     if (payload?.es === Cipherly.EncryptionScheme.Auth) {
-      return Cipherly.authDecrypt(payload, $token!);
+      return [await Cipherly.authDecrypt(payload, $token!)];
     }
     if (payload?.es === Cipherly.EncryptionScheme.Password) {
-      return Cipherly.passwordDecrypt(payload, password);
+      return [await Cipherly.passwordDecrypt(payload, password)];
     }
     throw new Error("Invalid Encryption Scheme");
   }
@@ -160,17 +158,6 @@
   </Section>
 
   {#if plainText}
-    <Section title="Decrypted Content">
-      {#await plainText}
-        <div class="space-y-6 py-6">
-          <Skeleton class="h-20 w-full" />
-          <Skeleton class="h-10 w-full" />
-        </div>
-      {:then plainText}
-        <TextOrFileOutput data={[plainText]} name={payload?.fn} />
-      {:catch error}
-        <EncryptionAlert title="Failed to Decrypt" {error} />
-      {/await}
-    </Section>
+    <TextOrFileOutput kind="Decrypt" data={plainText} name={payload?.fn} />
   {/if}
 </div>
