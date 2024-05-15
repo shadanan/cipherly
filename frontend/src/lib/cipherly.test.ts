@@ -70,7 +70,11 @@ describe("cipherly", () => {
       ct: new Uint8Array(16),
     };
     const encoded = Cipherly.encodeAuthPayload(actual);
-    const expected = { es: Cipherly.EncryptionScheme.Auth, ...actual };
+    const expected = {
+      es: Cipherly.EncryptionScheme.Auth,
+      fn: null,
+      ...actual,
+    };
     expect(Cipherly.decodeAuthPayload(encoded)).toEqual(expected);
   });
 
