@@ -1,47 +1,79 @@
 <script lang="ts">
-  import { passwordEncrypt } from "$lib/cipherly";
-  import CopyText from "$lib/components/CopyText.svelte";
+  import {
+    decryptUrl,
+    encodeBase64,
+    encodeUtf8,
+    passwordEncrypt,
+  } from "$lib/cipherly";
   import EncryptionAlert from "$lib/components/EncryptionAlert.svelte";
   import Section from "$lib/components/Section.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
+  import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-  import { Textarea } from "$lib/components/ui/textarea";
   import { getError } from "$lib/form";
   import { AlertCircle } from "lucide-svelte";
   import { z } from "zod";
 
-  const PasswordEncryptFormSchema = z.object({
-    plainText: z.instanceof(Uint8Array).refine((v) => v.length > 0),
-    password: z.string().default(""),
-  });
+  const PasswordEncryptFormSchema = z
+    .object({
+      text: z.string(),
+      file: z.instanceof(File).nullable(),
+      password: z.string().default(""),
+    })
+    .transform(async ({ text, file, password }, ctx) => {
+      let data: Uint8Array;
+      if (file !== null) {
+        data = new Uint8Array(await file.arrayBuffer());
+      } else if (text.length > 0) {
+        data = encodeUtf8(text);
+      } else {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Either text or file input must be present",
+          path: ["text", "file"],
+        });
+        return z.NEVER;
+      }
+      return { data, filename: file?.name, password };
+    });
+  type PasswordEncryptFormData = z.input<typeof PasswordEncryptFormSchema>;
 
-  type PasswordEncryptFormData = z.infer<typeof PasswordEncryptFormSchema>;
-
-  let validationError: z.ZodError | null;
   let formData: PasswordEncryptFormData = {
-    plainText: new Uint8Array(),
+    text: "",
+    file: null,
     password: "",
   };
 
-  function validateFormData(formData: PasswordEncryptFormData): boolean {
-    const validationResult = PasswordEncryptFormSchema.safeParse(formData);
-    validationError = validationResult.success ? null : validationResult.error;
-    return validationResult.success;
+  let validationError: z.ZodError | null;
+  let payload: Promise<Uint8Array> | null = null;
+
+  $: {
+    formData;
+    payload = null;
+    validationError = null;
   }
-  let payload: Promise<string> | null = null;
 </script>
 
 <div class="space-y-8">
   <Section title="Password Encrypt">
     <form
       class="space-y-6"
-      on:submit|preventDefault={() => {
-        if (validateFormData(formData)) {
-          payload = passwordEncrypt(formData.plainText, formData.password);
+      on:submit|preventDefault={async () => {
+        const result = await PasswordEncryptFormSchema.safeParseAsync(formData);
+        if (!result.success) {
+          validationError = result.error;
+          payload = null;
+          return;
         }
+        validationError = null;
+        payload = passwordEncrypt(
+          result.data.data,
+          result.data.password,
+          result.data.filename,
+        );
       }}
     >
       <div class="space-y-2">
@@ -61,7 +93,8 @@
         {/if}
 
         <TextOrFileInput
-          bind:data={formData.plainText}
+          bind:text={formData.text}
+          bind:file={formData.file}
           placeholder="plaintext secret"
         />
       </div>
@@ -95,24 +128,13 @@
           <Skeleton class="h-10 w-full" />
         </div>
       {:then payload}
-        <div class="space-y-2">
-          <Label
-            for="payload"
-            class="text-background-foreground text-sm uppercase tracking-wider"
-          >
-            Ciphertext Payload
-          </Label>
-          <Textarea
-            class="focus-visible:ring-none disabled:opacity-1 border-2  border-muted text-base focus-visible:outline-none disabled:cursor-text disabled:text-green-600"
-            id="payload"
-            disabled
-            value={payload}
-            placeholder="The plain text secret to encrypt"
-          />
-        </div>
-        <div class="space-x-2 pt-4">
-          <CopyText label="Ciphertext" text={payload} />
-        </div>
+        <TextOrFileOutput
+          data={[
+            decryptUrl(),
+            formData.file ? payload : encodeUtf8(encodeBase64(payload)),
+          ]}
+          name={formData.file ? formData.file.name + ".cly" : null}
+        />
       {:catch error}
         <EncryptionAlert {error} />
       {/await}

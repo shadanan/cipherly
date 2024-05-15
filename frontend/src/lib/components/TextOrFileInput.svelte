@@ -1,39 +1,12 @@
 <script lang="ts">
-  import { encodeUtf8 } from "$lib/cipherly";
   import FileDrop from "filedrop-svelte";
   import { filesize } from "filesize";
   import { FileText, HardDriveUpload, XCircle } from "lucide-svelte";
   import { Textarea } from "./ui/textarea";
 
-  export let loading: boolean = false;
-  export let data: Uint8Array = new Uint8Array();
-  export let filename: string | null = null;
   export let placeholder: string;
-
-  let text: string;
-  let file: File | null;
-
-  function resolveData() {
-    if (!!text) {
-      data = encodeUtf8(text);
-      filename = null;
-    } else if (!!file) {
-      loading = true;
-      file.arrayBuffer().then((v) => {
-        data = new Uint8Array(v);
-        loading = false;
-      });
-      filename = file.name;
-    } else {
-      data = new Uint8Array();
-      filename = null;
-    }
-  }
-
-  $: {
-    text, file;
-    resolveData();
-  }
+  export let text: string = "";
+  export let file: File | null = null;
 </script>
 
 {#if file}

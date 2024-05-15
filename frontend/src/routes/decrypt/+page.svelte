@@ -1,17 +1,17 @@
 <script lang="ts">
   import { renderLoginButton, token } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
-  import CopyText from "$lib/components/CopyText.svelte";
   import Section from "$lib/components/Section.svelte";
+  import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
+  import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
   import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
-  import { Textarea } from "$lib/components/ui/textarea";
   import { getError, hasError } from "$lib/form";
   import { AlertCircle } from "lucide-svelte";
   import { onMount } from "svelte";
-  import { ZodError, z } from "zod";
+  import { z } from "zod";
   import Auth from "./auth.svelte";
   import Password from "./password.svelte";
 
@@ -20,67 +20,85 @@
   });
 
   const DecryptFormSchema = z
-    .string()
-    .min(1)
-    .transform((encodedPayload, ctx) => {
-      try {
-        const payload = Cipherly.decodePayload(encodedPayload);
-        if (
-          !Cipherly.isPasswordPayload(payload) &&
-          !Cipherly.isAuthPayload(payload)
-        ) {
-          throw `Invalid Cipherly payload: ${payload}`;
+    .object({
+      text: z.string(),
+      file: z.instanceof(File).nullable(),
+    })
+    .transform(async ({ text, file }, ctx) => {
+      const expectedHostPath = location.href.split("#", 2)[0];
+      if (file !== null) {
+        const data = new Uint8Array(await file.arrayBuffer());
+        const endOfUrl = data.indexOf(0x23);
+        if (endOfUrl === -1) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Payload is missing URL header",
+            path: ["file"],
+          });
+          return null;
         }
+        const hostPath = Cipherly.decodeUtf8(data.subarray(0, endOfUrl));
+        if (hostPath !== expectedHostPath) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Payload is not intended for this Cipherly instance",
+            path: ["file"],
+          });
+          return null;
+        }
+        const payload = Cipherly.decodePayload(data.subarray(endOfUrl + 1));
         return payload;
-      } catch (err) {
-        console.log(err);
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Invalid Cipherly payload",
-          path: ["payload"],
-        });
       }
-      return null;
-    });
-  type DecryptFormData = z.infer<typeof DecryptFormSchema>;
 
-  let encodedPayload: string | null;
-  let payload: DecryptFormData = null;
+      if (text.length > 0) {
+        const [hostPath, encodedPayload] = text.split("#", 2);
+        if (hostPath !== expectedHostPath) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Payload is not intended for this Cipherly instance",
+            path: ["text"],
+          });
+          return null;
+        }
+        const payload = Cipherly.decodePayload(
+          Cipherly.decodeBase64(encodedPayload),
+        );
+        return payload;
+      }
+
+      return null;
+    })
+    .refine(
+      (payload) =>
+        Cipherly.isPasswordPayload(payload) || Cipherly.isAuthPayload(payload),
+      "Invalid Cipherly payload",
+    );
+  type DecryptFormData = z.input<typeof DecryptFormSchema>;
+  type DecryptPayload = z.output<typeof DecryptFormSchema>;
+
+  let formData: DecryptFormData = {
+    text: location.hash ? location.href : "",
+    file: null,
+  };
+  let payload: DecryptPayload = null;
+  $: {
+    formData;
+    DecryptFormSchema.safeParseAsync(formData).then(
+      (p) => (payload = p.success ? p.data : null),
+    );
+  }
 
   let validationError: z.ZodError | null;
   let password = "";
-  let loading = false;
-  let plainText: string | null = null;
-  let decryptionError: any = null;
+  let plainText: Promise<Uint8Array> | null = null;
 
-  if (location.hash) {
-    encodedPayload = location.href;
-  }
-
-  $: {
-    decryptionError = null;
-    plainText = null;
-    if (encodedPayload && encodedPayload.trim() !== "") {
-      try {
-        payload = DecryptFormSchema.parse(encodedPayload);
-        validationError = null;
-      } catch (err) {
-        validationError = err as ZodError;
-        payload = null;
-      }
-    } else {
-      validationError = null;
-    }
-  }
-
-  async function decrypt(payload: DecryptFormData): Promise<string | null> {
+  async function decrypt(payload: DecryptPayload): Promise<Uint8Array> {
+    console.log(payload);
     if (payload?.es === Cipherly.EncryptionScheme.Auth) {
-      return Cipherly.decodeUtf8(await Cipherly.authDecrypt(payload, $token!));
+      return Cipherly.authDecrypt(payload, $token!);
     }
     if (payload?.es === Cipherly.EncryptionScheme.Password) {
-      return Cipherly.decodeUtf8(
-        await Cipherly.passwordDecrypt(payload, password),
-      );
+      return Cipherly.passwordDecrypt(payload, password);
     }
     throw new Error("Invalid Encryption Scheme");
   }
@@ -98,26 +116,19 @@
   <Section title={encryptionTitle(payload)}>
     <form
       class="space-y-6"
-      on:submit|preventDefault={async () => {
+      on:submit|preventDefault={() => {
         plainText = null;
         if (validationError) return;
-
-        loading = true;
-        try {
-          plainText = await decrypt(payload);
-          decryptionError = null;
-        } catch (e) {
-          decryptionError = e;
-        } finally {
-          loading = false;
-        }
+        plainText = decrypt(payload);
       }}
     >
       <div class="space-y-2">
         <Label
           class="text-background-foreground text-sm uppercase tracking-wider"
-          for="payload">Ciphertext Payload</Label
+          for="payload"
         >
+          Ciphertext Payload
+        </Label>
 
         {#if hasError(validationError, "payload")}
           {@const payloadErr = getError(validationError, "payload")}
@@ -127,13 +138,10 @@
           </p>
         {/if}
 
-        <Textarea
-          required
-          minlength={1}
-          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-          id="payload"
-          bind:value={encodedPayload}
-          placeholder="The ciphertext payload to be decrypted"
+        <TextOrFileInput
+          bind:text={formData.text}
+          bind:file={formData.file}
+          placeholder="ciphertext payload"
         />
       </div>
 
@@ -151,48 +159,29 @@
     </form>
   </Section>
 
-  {#if plainText || decryptionError}
+  {#if plainText}
     <Section title="Decrypted Content">
-      {#if loading}
+      {#await plainText}
         <div class="space-y-6 py-6">
           <Skeleton class="h-20 w-full" />
           <Skeleton class="h-10 w-full" />
         </div>
-      {/if}
-
-      {#if decryptionError}
+      {:then plainText}
+        <TextOrFileOutput data={[plainText]} name={payload?.fn} />
+      {:catch error}
         <Alert.Root variant="destructive" class="space-y-2 rounded">
           <Alert.Title>Failed to Decrypt</Alert.Title>
           <Alert.Description>
-            {#if decryptionError.status === 401}
+            {#if error.status === 401}
               Unauthorized
-            {:else if decryptionError.name === "OperationError"}
+            {:else if error.name === "OperationError"}
               Incorrect Password
             {:else}
-              {JSON.stringify(decryptionError)}
+              {JSON.stringify(error)}
             {/if}
           </Alert.Description>
         </Alert.Root>
-      {/if}
-
-      {#if plainText}
-        <div class="space-y-2">
-          <Label
-            class="text-background-foreground text-sm uppercase tracking-wider"
-            for="plainText"
-          >
-            Decrypted Plaintext
-          </Label>
-          <Textarea
-            class="disabled:opacity-1 border-2 border-muted text-base focus-visible:outline-none focus-visible:ring-0 disabled:cursor-text disabled:text-green-600"
-            id="plainText"
-            disabled
-            value={plainText}
-            placeholder="The decrypted plaintext"
-          />
-        </div>
-        <CopyText label="Plaintext" text={plainText} />
-      {/if}
+      {/await}
     </Section>
   {/if}
 </div>

@@ -1,3 +1,4 @@
+import { encode as encodeMessagePack } from "@msgpack/msgpack";
 import { describe, expect, it, vi } from "vitest";
 import * as Cipherly from "./cipherly";
 
@@ -71,6 +72,12 @@ describe("cipherly", () => {
     const encoded = Cipherly.encodeAuthPayload(actual);
     const expected = { es: Cipherly.EncryptionScheme.Auth, ...actual };
     expect(Cipherly.decodeAuthPayload(encoded)).toEqual(expected);
+  });
+
+  it("message pack", () => {
+    console.log(
+      encodeMessagePack({ a: undefined, b: 1 }, { ignoreUndefined: true }),
+    );
   });
 
   // TODO: Unit tests for seal / unseal with a mock of the backend
