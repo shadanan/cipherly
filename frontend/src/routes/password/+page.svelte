@@ -31,7 +31,7 @@
         ctx.addIssue({
           code: z.ZodIssueCode.custom,
           message: "Either text or file input must be present",
-          path: ["text", "file"],
+          path: ["plainText"],
         });
         return z.NEVER;
       }

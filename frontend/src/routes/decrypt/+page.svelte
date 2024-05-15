@@ -137,7 +137,6 @@
 </script>
 
 <div class="space-y-8">
-  {validationError}
   <Section title={encryptionTitle(payload)}>
     <form
       class="space-y-6"
