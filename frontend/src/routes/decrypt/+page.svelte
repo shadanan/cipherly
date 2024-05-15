@@ -31,21 +31,32 @@
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Payload is missing URL header",
-            path: ["file"],
+            path: ["payload"],
+            fatal: true,
           });
-          return null;
+          return z.NEVER;
         }
         const hostPath = Cipherly.decodeUtf8(data.subarray(0, endOfUrl));
         if (hostPath !== expectedHostPath) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Payload is not intended for this Cipherly instance",
-            path: ["file"],
+            path: ["payload"],
+            fatal: true,
           });
-          return null;
+          return z.NEVER;
         }
-        const payload = Cipherly.decodePayload(data.subarray(endOfUrl + 1));
-        return payload;
+        try {
+          return Cipherly.decodePayload(data.subarray(endOfUrl + 1));
+        } catch (error) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Invalid Cipherly payload",
+            path: ["payload"],
+            fatal: true,
+          });
+          return z.NEVER;
+        }
       }
 
       if (text.length > 0) {
@@ -54,22 +65,32 @@
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             message: "Payload is not intended for this Cipherly instance",
-            path: ["text"],
+            path: ["payload"],
+            fatal: true,
           });
-          return null;
+          return z.NEVER;
         }
-        const payload = Cipherly.decodePayload(
-          Cipherly.decodeBase64(encodedPayload),
-        );
-        return payload;
+        try {
+          return Cipherly.decodePayload(Cipherly.decodeBase64(encodedPayload));
+        } catch (error) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Invalid Cipherly payload",
+            path: ["payload"],
+            fatal: true,
+          });
+          return z.NEVER;
+        }
       }
 
       return null;
     })
     .refine(
       (payload) =>
-        Cipherly.isPasswordPayload(payload) || Cipherly.isAuthPayload(payload),
-      "Invalid Cipherly payload",
+        payload === null ||
+        Cipherly.isPasswordPayload(payload) ||
+        Cipherly.isAuthPayload(payload),
+      { message: "Invalid Cipherly payload", path: ["payload"] },
     );
   type DecryptFormData = z.input<typeof DecryptFormSchema>;
   type DecryptPayload = z.output<typeof DecryptFormSchema>;
@@ -81,9 +102,15 @@
   let payload: DecryptPayload = null;
   $: {
     formData;
-    DecryptFormSchema.safeParseAsync(formData).then(
-      (p) => (payload = p.success ? p.data : null),
-    );
+    DecryptFormSchema.safeParseAsync(formData).then((p) => {
+      if (p.success) {
+        payload = p.data;
+        validationError = null;
+      } else {
+        payload = null;
+        validationError = p.error;
+      }
+    });
   }
 
   let validationError: z.ZodError | null;
@@ -91,7 +118,6 @@
   let plainText: Promise<Uint8Array[]> | null = null;
 
   async function decrypt(payload: DecryptPayload): Promise<Uint8Array[]> {
-    console.log(payload);
     if (payload?.es === Cipherly.EncryptionScheme.Auth) {
       return [await Cipherly.authDecrypt(payload, $token!)];
     }
@@ -111,6 +137,7 @@
 </script>
 
 <div class="space-y-8">
+  {validationError}
   <Section title={encryptionTitle(payload)}>
     <form
       class="space-y-6"
