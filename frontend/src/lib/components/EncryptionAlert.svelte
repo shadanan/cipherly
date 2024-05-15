@@ -1,20 +1,21 @@
 <script lang="ts">
   import * as Alert from "$lib/components/ui/alert";
-  export let error: { message: string | undefined } | string | undefined;
-  export let title: string = "Failed to Encrypt";
+
+  export let title: string;
+  export let error: any;
 </script>
 
 <Alert.Root variant="destructive" class="space-y-2 rounded">
   <Alert.Title>{title}</Alert.Title>
   <Alert.Description>
-    {#if error}
-      {#if typeof error == "object"}
-        {error.message}
-      {:else}
-        {error}
-      {/if}
+    {#if error?.status === 401}
+      Unauthorized
+    {:else if error?.name === "OperationError"}
+      Incorrect Password
+    {:else if typeof error == "object"}
+      {error.message}
     {:else}
-      Unexpected error
+      {error}
     {/if}
   </Alert.Description>
 </Alert.Root>

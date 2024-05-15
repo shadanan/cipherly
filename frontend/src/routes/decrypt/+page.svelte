@@ -1,10 +1,10 @@
 <script lang="ts">
   import { renderLoginButton, token } from "$lib/auth";
   import * as Cipherly from "$lib/cipherly";
+  import EncryptionAlert from "$lib/components/EncryptionAlert.svelte";
   import Section from "$lib/components/Section.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
-  import * as Alert from "$lib/components/ui/alert";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
   import { Skeleton } from "$lib/components/ui/skeleton";
@@ -169,18 +169,7 @@
       {:then plainText}
         <TextOrFileOutput data={[plainText]} name={payload?.fn} />
       {:catch error}
-        <Alert.Root variant="destructive" class="space-y-2 rounded">
-          <Alert.Title>Failed to Decrypt</Alert.Title>
-          <Alert.Description>
-            {#if error.status === 401}
-              Unauthorized
-            {:else if error.name === "OperationError"}
-              Incorrect Password
-            {:else}
-              {JSON.stringify(error)}
-            {/if}
-          </Alert.Description>
-        </Alert.Root>
+        <EncryptionAlert title="Failed to Decrypt" {error} />
       {/await}
     </Section>
   {/if}

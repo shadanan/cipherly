@@ -136,7 +136,7 @@
           name={formData.file ? formData.file.name + ".cly" : null}
         />
       {:catch error}
-        <EncryptionAlert {error} />
+        <EncryptionAlert title="Failed to Encrypt" {error} />
       {/await}
     </Section>
   {/if}
