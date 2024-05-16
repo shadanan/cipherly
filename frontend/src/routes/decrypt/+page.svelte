@@ -12,10 +12,9 @@
   import Section from "$lib/components/Section.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
+  import ValidationError from "$lib/components/ValidationError.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
-  import { getError, hasError } from "$lib/form";
-  import { AlertCircle } from "lucide-svelte";
   import { onMount } from "svelte";
   import { z } from "zod";
   import Auth from "./auth.svelte";
@@ -65,15 +64,15 @@
     DecryptFormSchema.safeParseAsync(formData).then((p) => {
       if (p.success) {
         payload = p.data;
-        validationError = null;
+        error = null;
       } else {
         payload = null;
-        validationError = p.error;
+        error = p.error;
       }
     });
   }
 
-  let validationError: z.ZodError | null;
+  let error: z.ZodError | null;
   let password = "";
   let plainText: Promise<Uint8Array[]> | null = null;
 
@@ -102,7 +101,7 @@
       class="space-y-6"
       on:submit|preventDefault={() => {
         plainText = null;
-        if (validationError) return;
+        if (error) return;
         plainText = decrypt(payload);
       }}
     >
@@ -114,14 +113,7 @@
           Ciphertext Payload
         </Label>
 
-        {#if hasError(validationError, "payload")}
-          {@const payloadErr = getError(validationError, "payload")}
-          <p class="flex items-center space-x-1 text-xs text-destructive">
-            <AlertCircle class="inline-block h-[12px] w-[12px]"></AlertCircle>
-            <span>{payloadErr}</span>
-          </p>
-        {/if}
-
+        <ValidationError {error} path="payload" />
         <TextOrFileInput
           text={location.hash ? location.href : ""}
           bind:data={formData.data}

@@ -4,10 +4,9 @@
   import Section from "$lib/components/Section.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
+  import ValidationError from "$lib/components/ValidationError.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
-  import { getError, hasError } from "$lib/form";
-  import { AlertCircle } from "lucide-svelte";
   import { z } from "zod";
 
   const AuthEncryptFormSchema = z
@@ -28,13 +27,13 @@
     emails: [],
   };
 
-  let validationError: z.ZodError | null;
+  let error: z.ZodError | null;
   let payload: Promise<Uint8Array> | null = null;
 
   $: {
     formData;
     payload = null;
-    validationError = null;
+    error = null;
   }
 </script>
 
@@ -44,13 +43,13 @@
       class="space-y-6"
       on:submit|preventDefault={() => {
         const result = AuthEncryptFormSchema.safeParse(formData);
-        validationError = result.success ? null : result.error;
+        error = result.success ? null : result.error;
         if (!result.success) {
-          validationError = result.error;
+          error = result.error;
           payload = null;
           return;
         }
-        validationError = null;
+        error = null;
         payload = authEncrypt(
           result.data.data,
           result.data.emails,
@@ -66,14 +65,7 @@
           Plaintext
         </Label>
 
-        <!-- PlainText Validation Error  -->
-        {#if getError(validationError, "plainText")}
-          <p class="flex items-center space-x-1 text-xs text-destructive">
-            <AlertCircle class="inline-block h-[12px] w-[12px]"></AlertCircle>
-            <span>{getError(validationError, "plainText")}</span>
-          </p>
-        {/if}
-
+        <ValidationError {error} path="plainText" />
         <TextOrFileInput
           bind:data={formData.data}
           bind:filename={formData.filename}
@@ -90,19 +82,7 @@
           Authorized Emails
         </Label>
 
-        <!-- Emails Validation Error -->
-        {#if hasError(validationError, "emails")}
-          <p class="flex items-center space-x-1 text-xs text-destructive">
-            <AlertCircle class="inline-block h-[12px] w-[12px]"></AlertCircle>
-            <span>
-              {getError(validationError, "emails")}: {formData.emails.join(
-                ", ",
-              )}
-            </span>
-          </p>
-        {/if}
-
-        <!-- Emails Input Chip  -->
+        <ValidationError {error} path="emails" />
         <Chip
           id="emails"
           bind:values={formData.emails}
