@@ -1,10 +1,5 @@
 <script lang="ts">
-  import {
-    authEncrypt,
-    decryptUrl,
-    encodeBase64,
-    encodeUtf8,
-  } from "$lib/cipherly";
+  import { authEncrypt, encodePayload, encodeUtf8 } from "$lib/cipherly";
   import Chip from "$lib/components/Chip.svelte";
   import Section from "$lib/components/Section.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
@@ -138,10 +133,8 @@
   {#if payload}
     <TextOrFileOutput
       kind="Encrypt"
-      data={Promise.all([
-        decryptUrl(),
-        formData.file ? payload : payload.then(encodeBase64).then(encodeUtf8),
-      ])}
+      data={payload.then((data) => encodePayload(data, !!formData.file))}
+      name={formData.file ? formData.file.name + ".cly" : null}
     />
   {/if}
 </div>
