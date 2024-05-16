@@ -4,7 +4,7 @@ import {
 } from "@msgpack/msgpack";
 import { Base64 } from "js-base64";
 
-export function decodeBase64(data: string): Uint8Array {
+function decodeBase64(data: string): Uint8Array {
   return Base64.toUint8Array(data);
 }
 
@@ -140,7 +140,7 @@ export async function passwordEncrypt(
   const key = await deriveKey(encodeUtf8(password), salt);
 
   const iv = generateIv();
-  const cipherText = await encrypt(plainText!, key, iv);
+  const cipherText = await encrypt(plainText, key, iv);
 
   return encodePasswordPayload({ s: salt, iv: iv, ct: cipherText }, filename);
 }
@@ -322,20 +322,6 @@ export async function authDecrypt(
   const envelope = await unseal({ kid, nonce, data }, token);
   const plainText = await decrypt(cipherText, envelope.dek, iv);
   return plainText;
-}
-
-export type NamedData = {
-  name: string | null;
-  data: Uint8Array;
-};
-
-export function save(data: Uint8Array[], name: string) {
-  const blob = new Blob(data, { type: "application/octet-stream" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = name;
-  a.click();
 }
 
 export const exportedForTesting = {

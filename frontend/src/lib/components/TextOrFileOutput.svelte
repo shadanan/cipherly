@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { decodeUtf8, save } from "$lib/cipherly";
+  import { decodeUtf8 } from "$lib/cipherly";
   import CopyText from "./CopyText.svelte";
   import EncryptionAlert from "./EncryptionAlert.svelte";
   import { Button } from "./ui/button";
@@ -10,6 +10,15 @@
   export let kind: string;
   export let data: Promise<Uint8Array[]>;
   export let name: string | null = null;
+
+  function save(data: Uint8Array[], name: string) {
+    const blob = new Blob(data, { type: "application/octet-stream" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+  }
 
   if (name !== null) {
     data.then((data) => save(data, name));
