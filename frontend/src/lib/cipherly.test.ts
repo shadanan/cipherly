@@ -1,26 +1,43 @@
 import { describe, expect, it, vi } from "vitest";
-import * as Cipherly from "./cipherly";
+import {
+  EncryptionScheme,
+  decodeUtf8,
+  encodeUtf8,
+  exportedForTesting,
+} from "./cipherly";
+const {
+  decodeAuthPayload,
+  decodePasswordPayload,
+  decrypt,
+  deriveKey,
+  encodeAuthPayload,
+  encodePasswordPayload,
+  encrypt,
+  generateSalt,
+  generateKey,
+  generateIv,
+} = exportedForTesting;
 
 describe("cipherly", () => {
   it("encodeUtf8 / decodeUtf8 succeeds", () => {
     const data = "hello";
-    const encoded = Cipherly.encodeUtf8(data);
-    expect(Cipherly.decodeUtf8(encoded)).toBe(data);
+    const encoded = encodeUtf8(data);
+    expect(decodeUtf8(encoded)).toBe(data);
   });
 
   it("generateSalt generates a 16-byte salt", () => {
-    const salt = Cipherly.generateSalt();
+    const salt = generateSalt();
     expect(salt.length).toBe(16);
   });
 
   it("generateKey generates a 256-bit AES-GCM key", async () => {
-    const key = await Cipherly.generateKey();
+    const key = await generateKey();
     expect(key.algorithm.name).toBe("AES-GCM");
     expect(key.usages).toEqual(["encrypt", "decrypt"]);
   });
 
   it("generateIv generates a 12-byte initialization vector", () => {
-    const iv = Cipherly.generateIv();
+    const iv = generateIv();
     expect(iv.length).toBe(12);
   });
 
@@ -30,29 +47,29 @@ describe("cipherly", () => {
       host: "cipherly.app",
     });
     const actual = {
-      s: Cipherly.generateSalt(),
-      iv: Cipherly.generateIv(),
-      ct: Cipherly.encodeUtf8("hello"),
+      s: generateSalt(),
+      iv: generateIv(),
+      ct: encodeUtf8("hello"),
     };
-    const encoded = Cipherly.encodePasswordPayload(actual);
-    const expected = { es: Cipherly.EncryptionScheme.Password, ...actual };
-    expect(Cipherly.decodePasswordPayload(encoded)).toEqual(expected);
+    const encoded = encodePasswordPayload(actual);
+    const expected = { es: EncryptionScheme.Password, ...actual };
+    expect(decodePasswordPayload(encoded)).toEqual(expected);
   });
 
   it("deriveKey derives a key from a password and salt", async () => {
-    const password = Cipherly.encodeUtf8("password");
-    const salt = Cipherly.generateSalt();
-    const key = await Cipherly.deriveKey(password, salt);
+    const password = encodeUtf8("password");
+    const salt = generateSalt();
+    const key = await deriveKey(password, salt);
     expect(key.algorithm.name).toBe("AES-GCM");
     expect(key.usages).toEqual(["encrypt", "decrypt"]);
   });
 
   it("encrypt / decrypt succeeds", async () => {
-    const key = await Cipherly.generateKey();
-    const iv = Cipherly.generateIv();
-    const plaintext = Cipherly.encodeUtf8("hello");
-    const ciphertext = await Cipherly.encrypt(plaintext, key, iv);
-    const decrypted = await Cipherly.decrypt(ciphertext, key, iv);
+    const key = await generateKey();
+    const iv = generateIv();
+    const plaintext = encodeUtf8("hello");
+    const ciphertext = await encrypt(plaintext, key, iv);
+    const decrypted = await decrypt(ciphertext, key, iv);
     expect(decrypted).toEqual(plaintext);
   });
 
@@ -68,9 +85,13 @@ describe("cipherly", () => {
       iv: new Uint8Array(12),
       ct: new Uint8Array(16),
     };
-    const encoded = Cipherly.encodeAuthPayload(actual);
-    const expected = { es: Cipherly.EncryptionScheme.Auth, ...actual };
-    expect(Cipherly.decodeAuthPayload(encoded)).toEqual(expected);
+    const encoded = encodeAuthPayload(actual);
+    const expected = {
+      es: EncryptionScheme.Auth,
+      fn: null,
+      ...actual,
+    };
+    expect(decodeAuthPayload(encoded)).toEqual(expected);
   });
 
   // TODO: Unit tests for seal / unseal with a mock of the backend

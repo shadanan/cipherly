@@ -1,4 +1,7 @@
-import { encode as pack, decode as unpack } from "@msgpack/msgpack";
+import {
+  decode as decodeMessagePack,
+  encode as encodeMessagePack,
+} from "@msgpack/msgpack";
 import { Base64 } from "js-base64";
 
 function decodeBase64(data: string): Uint8Array {
@@ -9,14 +12,6 @@ function encodeBase64(data: Uint8Array): string {
   return Base64.fromUint8Array(data, true);
 }
 
-function encodeMessagePack(obj: any): string {
-  return encodeBase64(pack(obj));
-}
-
-function decodeMessagePack(data: string) {
-  return unpack(decodeBase64(data));
-}
-
 export function encodeUtf8(data: string): Uint8Array {
   return new TextEncoder().encode(data);
 }
@@ -25,11 +20,11 @@ export function decodeUtf8(data: Uint8Array): string {
   return new TextDecoder().decode(data);
 }
 
-export function generateSalt(): Uint8Array {
+function generateSalt(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(16));
 }
 
-export async function generateKey(): Promise<CryptoKey> {
+async function generateKey(): Promise<CryptoKey> {
   return crypto.subtle.generateKey(
     {
       name: "AES-GCM",
@@ -40,23 +35,11 @@ export async function generateKey(): Promise<CryptoKey> {
   );
 }
 
-export function generateIv(): Uint8Array {
+function generateIv(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(12));
 }
 
-function decryptUrl(hash: string): string {
-  return `${location.protocol}//${location.host}/decrypt/#${hash}`;
-}
-
-function extractHash(data: string): string {
-  const hashPos = data.indexOf("#");
-  if (hashPos !== -1) {
-    return data.slice(hashPos + 1);
-  }
-  return data;
-}
-
-export async function deriveKey(
+async function deriveKey(
   password: Uint8Array,
   salt: Uint8Array,
 ): Promise<CryptoKey> {
@@ -82,7 +65,7 @@ export async function deriveKey(
   );
 }
 
-export async function encrypt(
+async function encrypt(
   data: Uint8Array,
   key: CryptoKey,
   iv: Uint8Array,
@@ -92,7 +75,7 @@ export async function encrypt(
   );
 }
 
-export async function decrypt(
+async function decrypt(
   data: Uint8Array,
   key: CryptoKey,
   iv: Uint8Array,
@@ -109,6 +92,7 @@ export enum EncryptionScheme {
 
 type PayloadHeader = {
   es: EncryptionScheme;
+  fn?: string;
 };
 
 type PasswordBody = {
@@ -117,10 +101,11 @@ type PasswordBody = {
   ct: Uint8Array; // ciphertext
 };
 
-export type PasswordPayload = PayloadHeader & PasswordBody;
+type PasswordPayload = PayloadHeader & PasswordBody;
 
 export function isPasswordPayload(payload: any): payload is PasswordPayload {
   return (
+    payload !== null &&
     typeof payload === "object" &&
     "es" in payload &&
     payload.es === EncryptionScheme.Password &&
@@ -130,39 +115,43 @@ export function isPasswordPayload(payload: any): payload is PasswordPayload {
   );
 }
 
-export function encodePasswordPayload(payload: PasswordBody): string {
+function encodePasswordPayload(
+  payload: PasswordBody,
+  filename?: string,
+): Uint8Array {
   const msgPackPayload: PasswordPayload = {
     es: EncryptionScheme.Password,
+    fn: filename,
     ...payload,
   };
-  return decryptUrl(encodeMessagePack(msgPackPayload));
+  return encodeMessagePack(msgPackPayload, { ignoreUndefined: true });
 }
 
-export function decodePasswordPayload(data: string): PasswordPayload {
-  return decodeMessagePack(extractHash(data)) as PasswordPayload;
+function decodePasswordPayload(data: Uint8Array): PasswordPayload {
+  return decodeMessagePack(data) as PasswordPayload;
 }
 
 export async function passwordEncrypt(
-  plainText: string,
+  plainText: Uint8Array,
   password: string,
-): Promise<string> {
+  filename?: string,
+): Promise<Uint8Array> {
   const salt = generateSalt();
   const key = await deriveKey(encodeUtf8(password), salt);
 
   const iv = generateIv();
-  const cipherText = await encrypt(encodeUtf8(plainText), key, iv);
+  const cipherText = await encrypt(plainText, key, iv);
 
-  return encodePasswordPayload({ s: salt, iv: iv, ct: cipherText });
+  return encodePasswordPayload({ s: salt, iv: iv, ct: cipherText }, filename);
 }
 
 export async function passwordDecrypt(
   payload: Payload,
   password: string,
-): Promise<string> {
+): Promise<Uint8Array> {
   const { s: salt, iv: iv, ct: cipherText } = payload as PasswordPayload;
   const key = await deriveKey(encodeUtf8(password), salt);
-  const plainText = await decrypt(cipherText, key, iv);
-  return decodeUtf8(plainText);
+  return await decrypt(cipherText, key, iv);
 }
 
 type AuthBody = {
@@ -173,10 +162,11 @@ type AuthBody = {
   ct: Uint8Array; // ciphertext
 };
 
-export type AuthPayload = PayloadHeader & AuthBody;
+type AuthPayload = PayloadHeader & AuthBody;
 
 export function isAuthPayload(payload: any): payload is AuthPayload {
   return (
+    payload !== null &&
     typeof payload === "object" &&
     "es" in payload &&
     payload.es === EncryptionScheme.Auth &&
@@ -188,22 +178,48 @@ export function isAuthPayload(payload: any): payload is AuthPayload {
   );
 }
 
-export function encodeAuthPayload(payload: AuthBody): string {
+function encodeAuthPayload(payload: AuthBody, filename?: string): Uint8Array {
   const msgPackPayload: AuthPayload = {
     es: EncryptionScheme.Auth,
+    fn: filename,
     ...payload,
   };
-  return decryptUrl(encodeMessagePack(msgPackPayload));
+  return encodeMessagePack(msgPackPayload);
 }
 
-export function decodeAuthPayload(data: string): AuthPayload {
-  return decodeMessagePack(extractHash(data)) as AuthPayload;
+function decodeAuthPayload(data: Uint8Array): AuthPayload {
+  return decodeMessagePack(data) as AuthPayload;
 }
 
 export type Payload = PasswordPayload | AuthPayload;
 
-export function decodePayload(data: string): Payload {
-  return decodeMessagePack(extractHash(data)) as Payload;
+function decryptUrl() {
+  return `${location.protocol}//${location.host}/decrypt/#`;
+}
+
+export function encodePayload(data: Uint8Array, file: boolean): Uint8Array[] {
+  const url = encodeUtf8(decryptUrl());
+  if (file) {
+    return [url, data];
+  } else {
+    return [url, encodeUtf8(encodeBase64(data))];
+  }
+}
+
+export function decodePayload(data: Uint8Array, file: boolean): Payload {
+  const endOfUrl = data.indexOf(0x23) + 1;
+  if (endOfUrl === 0) {
+    throw new Error("Payload is missing URL header");
+  }
+  const hostPath = decodeUtf8(data.subarray(0, endOfUrl));
+  if (hostPath !== decryptUrl()) {
+    throw new Error("Payload is not intended for this Cipherly instance");
+  }
+  let payloadData = data.subarray(endOfUrl);
+  if (!file) {
+    payloadData = decodeBase64(decodeUtf8(payloadData));
+  }
+  return decodeMessagePack(payloadData) as Payload;
 }
 
 type Envelope = {
@@ -217,7 +233,7 @@ type SealedEnvelope = {
   data: Uint8Array;
 };
 
-export async function seal(envelope: Envelope): Promise<SealedEnvelope> {
+async function seal(envelope: Envelope): Promise<SealedEnvelope> {
   const encodedDek = await crypto.subtle.exportKey("raw", envelope.dek);
   const response = await fetch("/api/seal", {
     method: "POST",
@@ -240,7 +256,7 @@ export async function seal(envelope: Envelope): Promise<SealedEnvelope> {
   };
 }
 
-export async function unseal(
+async function unseal(
   envelope: SealedEnvelope,
   token: string,
 ): Promise<Envelope> {
@@ -272,26 +288,30 @@ export async function unseal(
 }
 
 export async function authEncrypt(
-  plainText: string,
+  plainText: Uint8Array,
   emails: string[],
-): Promise<string> {
+  filename?: string,
+): Promise<Uint8Array> {
   const dek = await generateKey();
   const iv = generateIv();
-  const cipherText = await encrypt(encodeUtf8(plainText), dek, iv);
+  const cipherText = await encrypt(plainText, dek, iv);
   const { kid, nonce, data } = await seal({ dek, emails });
-  return encodeAuthPayload({
-    k: kid,
-    n: nonce,
-    se: data,
-    iv: iv,
-    ct: cipherText,
-  });
+  return encodeAuthPayload(
+    {
+      k: kid,
+      n: nonce,
+      se: data,
+      iv: iv,
+      ct: cipherText,
+    },
+    filename,
+  );
 }
 
 export async function authDecrypt(
   payload: Payload,
   token: string,
-): Promise<string> {
+): Promise<Uint8Array> {
   const {
     k: kid,
     n: nonce,
@@ -301,5 +321,18 @@ export async function authDecrypt(
   } = payload as AuthPayload;
   const envelope = await unseal({ kid, nonce, data }, token);
   const plainText = await decrypt(cipherText, envelope.dek, iv);
-  return decodeUtf8(plainText);
+  return plainText;
 }
+
+export const exportedForTesting = {
+  decodeAuthPayload,
+  decodePasswordPayload,
+  decrypt,
+  deriveKey,
+  encodeAuthPayload,
+  encodePasswordPayload,
+  encrypt,
+  generateIv,
+  generateKey,
+  generateSalt,
+};

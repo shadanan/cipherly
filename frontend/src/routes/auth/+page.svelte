@@ -1,36 +1,40 @@
 <script lang="ts">
-  import { authEncrypt } from "$lib/cipherly";
+  import { authEncrypt, encodePayload } from "$lib/cipherly";
   import Chip from "$lib/components/Chip.svelte";
-  import CopyText from "$lib/components/CopyText.svelte";
   import Section from "$lib/components/Section.svelte";
-  import * as Alert from "$lib/components/ui/alert";
+  import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
+  import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
+  import ValidationError from "$lib/components/ValidationError.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Label } from "$lib/components/ui/label";
-  import { Skeleton } from "$lib/components/ui/skeleton";
-  import { Textarea } from "$lib/components/ui/textarea";
-  import { getError, hasError } from "$lib/form";
-  import { AlertCircle } from "lucide-svelte";
   import { z } from "zod";
 
-  const AuthEncryptFormSchema = z.object({
-    emails: z.array(z.string().email()).min(1),
-    plainText: z.string().min(1),
-  });
-  type AuthEncryptFormData = z.infer<typeof AuthEncryptFormSchema>;
+  const AuthEncryptFormSchema = z
+    .object({
+      data: z.instanceof(Uint8Array),
+      filename: z.string().nullable(),
+      emails: z.array(z.string().email()).min(1),
+    })
+    .refine(({ data, filename }) => data.length !== 0 || filename !== null, {
+      message: "Either text or file input must be present",
+      path: ["plainText"],
+    });
+  type AuthEncryptFormData = z.input<typeof AuthEncryptFormSchema>;
 
-  let validationError: z.ZodError | null;
   let formData: AuthEncryptFormData = {
-    plainText: "",
+    data: new Uint8Array(),
+    filename: null,
     emails: [],
   };
 
-  function validateFormData(formData: AuthEncryptFormData): boolean {
-    const validationResult = AuthEncryptFormSchema.safeParse(formData);
-    validationError = validationResult.success ? null : validationResult.error;
-    return validationResult.success;
-  }
+  let error: z.ZodError | null;
+  let payload: Promise<Uint8Array> | null = null;
 
-  let payload: Promise<string> | null = null;
+  $: {
+    formData;
+    payload = null;
+    error = null;
+  }
 </script>
 
 <div class="space-y-8">
@@ -38,9 +42,19 @@
     <form
       class="space-y-6"
       on:submit|preventDefault={() => {
-        if (validateFormData(formData)) {
-          payload = authEncrypt(formData.plainText, formData.emails);
+        const result = AuthEncryptFormSchema.safeParse(formData);
+        error = result.success ? null : result.error;
+        if (!result.success) {
+          error = result.error;
+          payload = null;
+          return;
         }
+        error = null;
+        payload = authEncrypt(
+          result.data.data,
+          result.data.emails,
+          result.data.filename ? result.data.filename : undefined,
+        );
       }}
     >
       <div class="space-y-2">
@@ -51,20 +65,11 @@
           Plaintext
         </Label>
 
-        <!-- PlainText Validation Error  -->
-        {#if getError(validationError, "plainText")}
-          <p class="flex items-center space-x-1 text-xs text-destructive">
-            <AlertCircle class="inline-block h-[12px] w-[12px]"></AlertCircle>
-            <span>{getError(validationError, "plainText")}</span>
-          </p>
-        {/if}
-
-        <Textarea
-          required
-          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-          id="plainText"
-          bind:value={formData.plainText}
-          placeholder="The plaintext secret to encrypt"
+        <ValidationError {error} path="plainText" />
+        <TextOrFileInput
+          bind:data={formData.data}
+          bind:filename={formData.filename}
+          placeholder="plaintext secret"
         />
       </div>
 
@@ -77,19 +82,7 @@
           Authorized Emails
         </Label>
 
-        <!-- Emails Validation Error -->
-        {#if hasError(validationError, "emails")}
-          <p class="flex items-center space-x-1 text-xs text-destructive">
-            <AlertCircle class="inline-block h-[12px] w-[12px]"></AlertCircle>
-            <span>
-              {getError(validationError, "emails")}: {formData.emails.join(
-                ", ",
-              )}
-            </span>
-          </p>
-        {/if}
-
-        <!-- Emails Input Chip  -->
+        <ValidationError {error} path="emails" />
         <Chip
           id="emails"
           bind:values={formData.emails}
@@ -106,39 +99,10 @@
   </Section>
 
   {#if payload}
-    <Section title="Encrypted Content">
-      {#await payload}
-        <div class="space-y-6 py-6">
-          <Skeleton class="h-20 w-full" />
-          <Skeleton class="h-10 w-full" />
-        </div>
-      {:then payload}
-        <div class="space-y-2">
-          <Label
-            for="payload"
-            class="text-background-foreground text-sm uppercase tracking-wider"
-          >
-            Ciphertext Payload
-          </Label>
-          <Textarea
-            class="disabled:opacity-1 border-2 border-muted text-base focus-visible:outline-none focus-visible:ring-0 disabled:cursor-text disabled:text-green-600"
-            id="payload"
-            disabled
-            value={payload}
-          />
-        </div>
-
-        <div class="space-x-2 pt-4">
-          <CopyText label="Ciphertext" text={payload} />
-        </div>
-      {:catch error}
-        <Alert.Root variant="destructive" class="space-y-2 rounded">
-          <Alert.Title>Failed to Encrypt</Alert.Title>
-          <Alert.Description>
-            {error.message}
-          </Alert.Description>
-        </Alert.Root>
-      {/await}
-    </Section>
+    <TextOrFileOutput
+      kind="Encrypt"
+      data={payload.then((data) => encodePayload(data, !!formData.filename))}
+      name={formData.filename ? formData.filename + ".cly" : null}
+    />
   {/if}
 </div>

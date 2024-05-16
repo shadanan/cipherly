@@ -34,6 +34,8 @@
     "@msgpack/msgpack": "^3.0.0-beta2",
     "bits-ui": "^0.18.6",
     "clsx": "^2.1.0",
+    "filedrop-svelte": "^0.1.2",
+    "filesize": "^10.1.1",
     "google-oauth-gsi": "^4.0.1",
     "js-base64": "^3.7.7",
     "jwt-decode": "^4.0.0",

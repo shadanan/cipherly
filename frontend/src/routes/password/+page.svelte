@@ -1,37 +1,74 @@
 <script lang="ts">
-  import { passwordEncrypt } from "$lib/cipherly";
-  import CopyText from "$lib/components/CopyText.svelte";
+  import { encodePayload, passwordEncrypt } from "$lib/cipherly";
   import Section from "$lib/components/Section.svelte";
-  import * as Alert from "$lib/components/ui/alert";
+  import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
+  import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
+  import ValidationError from "$lib/components/ValidationError.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Input } from "$lib/components/ui/input";
   import { Label } from "$lib/components/ui/label";
-  import { Skeleton } from "$lib/components/ui/skeleton/index.js";
-  import { Textarea } from "$lib/components/ui/textarea";
+  import { z } from "zod";
 
-  let plainText = "";
-  let password = "";
-  let payload: Promise<string> | null = null;
+  const PasswordEncryptFormSchema = z
+    .object({
+      data: z.instanceof(Uint8Array),
+      filename: z.string().nullable(),
+      password: z.string().default(""),
+    })
+    .refine(({ data, filename }) => data.length !== 0 || filename !== null, {
+      message: "Either text or file input must be present",
+      path: ["plainText"],
+    });
+  type PasswordEncryptFormData = z.input<typeof PasswordEncryptFormSchema>;
+
+  let formData: PasswordEncryptFormData = {
+    data: new Uint8Array(),
+    filename: null,
+    password: "",
+  };
+
+  let error: z.ZodError | null;
+  let payload: Promise<Uint8Array> | null = null;
+
+  $: {
+    formData;
+    payload = null;
+    error = null;
+  }
 </script>
 
 <div class="space-y-8">
   <Section title="Password Encrypt">
     <form
       class="space-y-6"
-      on:submit|preventDefault={() =>
-        (payload = passwordEncrypt(plainText, password))}
+      on:submit|preventDefault={() => {
+        const result = PasswordEncryptFormSchema.safeParse(formData);
+        if (!result.success) {
+          error = result.error;
+          payload = null;
+          return;
+        }
+        error = null;
+        payload = passwordEncrypt(
+          result.data.data,
+          result.data.password,
+          result.data.filename ? result.data.filename : undefined,
+        );
+      }}
     >
       <div class="space-y-2">
         <Label
+          for="plainText"
           class="text-background-foreground text-sm uppercase tracking-wider"
-          for="plainText">Plaintext</Label
         >
-        <Textarea
-          required
-          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
-          id="plainText"
-          bind:value={plainText}
-          placeholder="The plaintext secret to encrypt"
+          Plaintext
+        </Label>
+
+        <ValidationError {error} path="plainText" />
+        <TextOrFileInput
+          bind:data={formData.data}
+          bind:filename={formData.filename}
+          placeholder="plaintext secret"
         />
       </div>
 
@@ -44,7 +81,7 @@
           id="password"
           class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
           placeholder="The password to use for encryption"
-          bind:value={password}
+          bind:value={formData.password}
         />
       </div>
 
@@ -57,39 +94,10 @@
   </Section>
 
   {#if payload}
-    <Section title="Encrypted Content">
-      {#await payload}
-        <div class="space-y-6 py-6">
-          <Skeleton class="h-20 w-full" />
-          <Skeleton class="h-10 w-full" />
-        </div>
-      {:then payload}
-        <div class="space-y-2">
-          <Label
-            for="payload"
-            class="text-background-foreground text-sm uppercase tracking-wider"
-          >
-            Ciphertext Payload
-          </Label>
-          <Textarea
-            class="focus-visible:ring-none disabled:opacity-1 border-2  border-muted text-base focus-visible:outline-none disabled:cursor-text disabled:text-green-600"
-            id="payload"
-            disabled
-            value={payload}
-            placeholder="The plain text secret to encrypt"
-          />
-        </div>
-        <div class="space-x-2 pt-4">
-          <CopyText label="Ciphertext" text={payload} />
-        </div>
-      {:catch error}
-        <Alert.Root variant="destructive" class="space-y-2 rounded">
-          <Alert.Title>Failed to Encrypt</Alert.Title>
-          <Alert.Description>
-            {error.message}
-          </Alert.Description>
-        </Alert.Root>
-      {/await}
-    </Section>
+    <TextOrFileOutput
+      kind="Encrypt"
+      data={payload.then((data) => encodePayload(data, !!formData.filename))}
+      name={formData.filename ? formData.filename + ".cly" : null}
+    />
   {/if}
 </div>
