@@ -31,18 +31,19 @@
       filename: z.string().nullable(),
     })
     .transform(({ data, filename }, ctx) => {
-      try {
-        return decodePayload(data, !!filename);
-      } catch (error) {
-        console.log(error);
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Invalid Cipherly payload",
-          path: ["payload"],
-          fatal: true,
-        });
-        return null;
+      if (data.length !== 0 || filename !== null) {
+        try {
+          return decodePayload(data, !!filename);
+        } catch (error) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Invalid Cipherly payload",
+            path: ["payload"],
+            fatal: true,
+          });
+        }
       }
+      return null;
     })
     .refine(
       (payload) =>
