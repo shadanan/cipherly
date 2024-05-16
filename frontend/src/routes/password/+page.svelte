@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { encodePayload, encodeUtf8, passwordEncrypt } from "$lib/cipherly";
+  import { encodePayload, passwordEncrypt } from "$lib/cipherly";
   import Section from "$lib/components/Section.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
@@ -12,31 +12,19 @@
 
   const PasswordEncryptFormSchema = z
     .object({
-      text: z.string(),
-      file: z.instanceof(File).nullable(),
+      data: z.instanceof(Uint8Array),
+      filename: z.string().nullable(),
       password: z.string().default(""),
     })
-    .transform(async ({ text, file, password }, ctx) => {
-      let data: Uint8Array;
-      if (file !== null) {
-        data = new Uint8Array(await file.arrayBuffer());
-      } else if (text.length > 0) {
-        data = encodeUtf8(text);
-      } else {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Either text or file input must be present",
-          path: ["plainText"],
-        });
-        return z.NEVER;
-      }
-      return { data, filename: file?.name, password };
+    .refine(({ data, filename }) => data.length !== 0 || filename !== null, {
+      message: "Either text or file input must be present",
+      path: ["plainText"],
     });
   type PasswordEncryptFormData = z.input<typeof PasswordEncryptFormSchema>;
 
   let formData: PasswordEncryptFormData = {
-    text: "",
-    file: null,
+    data: new Uint8Array(),
+    filename: null,
     password: "",
   };
 
@@ -54,8 +42,8 @@
   <Section title="Password Encrypt">
     <form
       class="space-y-6"
-      on:submit|preventDefault={async () => {
-        const result = await PasswordEncryptFormSchema.safeParseAsync(formData);
+      on:submit|preventDefault={() => {
+        const result = PasswordEncryptFormSchema.safeParse(formData);
         if (!result.success) {
           validationError = result.error;
           payload = null;
@@ -65,7 +53,7 @@
         payload = passwordEncrypt(
           result.data.data,
           result.data.password,
-          result.data.filename,
+          result.data.filename ? result.data.filename : undefined,
         );
       }}
     >
@@ -86,8 +74,8 @@
         {/if}
 
         <TextOrFileInput
-          bind:text={formData.text}
-          bind:file={formData.file}
+          bind:data={formData.data}
+          bind:filename={formData.filename}
           placeholder="plaintext secret"
         />
       </div>
@@ -116,8 +104,8 @@
   {#if payload}
     <TextOrFileOutput
       kind="Encrypt"
-      data={payload.then((data) => encodePayload(data, !!formData.file))}
-      name={formData.file ? formData.file.name + ".cly" : null}
+      data={payload.then((data) => encodePayload(data, !!formData.filename))}
+      name={formData.filename ? formData.filename + ".cly" : null}
     />
   {/if}
 </div>

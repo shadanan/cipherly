@@ -39,15 +39,6 @@ function generateIv(): Uint8Array {
   return crypto.getRandomValues(new Uint8Array(12));
 }
 
-export function encodePayload(data: Uint8Array, file: boolean): Uint8Array[] {
-  const url = encodeUtf8(`${location.protocol}//${location.host}/decrypt/#`);
-  if (file) {
-    return [url, data];
-  } else {
-    return [url, encodeUtf8(encodeBase64(data))];
-  }
-}
-
 async function deriveKey(
   password: Uint8Array,
   salt: Uint8Array,
@@ -202,8 +193,33 @@ function decodeAuthPayload(data: Uint8Array): AuthPayload {
 
 export type Payload = PasswordPayload | AuthPayload;
 
-export function decodePayload(data: Uint8Array): Payload {
-  return decodeMessagePack(data) as Payload;
+function decryptUrl() {
+  return `${location.protocol}//${location.host}/decrypt/#`;
+}
+
+export function encodePayload(data: Uint8Array, file: boolean): Uint8Array[] {
+  const url = encodeUtf8(decryptUrl());
+  if (file) {
+    return [url, data];
+  } else {
+    return [url, encodeUtf8(encodeBase64(data))];
+  }
+}
+
+export function decodePayload(data: Uint8Array, file: boolean): Payload {
+  const endOfUrl = data.indexOf(0x23) + 1;
+  if (endOfUrl === 0) {
+    throw new Error("Payload is missing URL header");
+  }
+  const hostPath = decodeUtf8(data.subarray(0, endOfUrl));
+  if (hostPath !== decryptUrl()) {
+    throw new Error("Payload is not intended for this Cipherly instance");
+  }
+  let payloadData = data.subarray(endOfUrl);
+  if (!file) {
+    payloadData = decodeBase64(decodeUtf8(payloadData));
+  }
+  return decodeMessagePack(payloadData) as Payload;
 }
 
 type Envelope = {

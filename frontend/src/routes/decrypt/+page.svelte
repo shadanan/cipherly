@@ -3,9 +3,7 @@
   import {
     EncryptionScheme,
     authDecrypt,
-    decodeBase64,
     decodePayload,
-    decodeUtf8,
     isAuthPayload,
     isPasswordPayload,
     passwordDecrypt,
@@ -29,71 +27,22 @@
 
   const DecryptFormSchema = z
     .object({
-      text: z.string(),
-      file: z.instanceof(File).nullable(),
+      data: z.instanceof(Uint8Array),
+      filename: z.string().nullable(),
     })
-    .transform(async ({ text, file }, ctx) => {
-      const expectedHostPath = location.href.split("#", 2)[0];
-      if (file !== null) {
-        const data = new Uint8Array(await file.arrayBuffer());
-        const endOfUrl = data.indexOf(0x23);
-        if (endOfUrl === -1) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Payload is missing URL header",
-            path: ["payload"],
-            fatal: true,
-          });
-          return z.NEVER;
-        }
-        const hostPath = decodeUtf8(data.subarray(0, endOfUrl));
-        if (hostPath !== expectedHostPath) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Payload is not intended for this Cipherly instance",
-            path: ["payload"],
-            fatal: true,
-          });
-          return z.NEVER;
-        }
-        try {
-          return decodePayload(data.subarray(endOfUrl + 1));
-        } catch (error) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Invalid Cipherly payload",
-            path: ["payload"],
-            fatal: true,
-          });
-          return z.NEVER;
-        }
+    .transform(({ data, filename }, ctx) => {
+      try {
+        return decodePayload(data, !!filename);
+      } catch (error) {
+        console.log(error);
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid Cipherly payload",
+          path: ["payload"],
+          fatal: true,
+        });
+        return null;
       }
-
-      if (text.length > 0) {
-        const [hostPath, encodedPayload] = text.split("#", 2);
-        if (hostPath !== expectedHostPath) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Payload is not intended for this Cipherly instance",
-            path: ["payload"],
-            fatal: true,
-          });
-          return z.NEVER;
-        }
-        try {
-          return decodePayload(decodeBase64(encodedPayload));
-        } catch (error) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Invalid Cipherly payload",
-            path: ["payload"],
-            fatal: true,
-          });
-          return z.NEVER;
-        }
-      }
-
-      return null;
     })
     .refine(
       (payload) =>
@@ -106,8 +55,8 @@
   type DecryptPayload = z.output<typeof DecryptFormSchema>;
 
   let formData: DecryptFormData = {
-    text: location.hash ? location.href : "",
-    file: null,
+    data: new Uint8Array(),
+    filename: null,
   };
   let payload: DecryptPayload = null;
   $: {
@@ -173,8 +122,9 @@
         {/if}
 
         <TextOrFileInput
-          bind:text={formData.text}
-          bind:file={formData.file}
+          text={location.hash ? location.href : ""}
+          bind:data={formData.data}
+          bind:filename={formData.filename}
           placeholder="ciphertext payload"
         />
       </div>

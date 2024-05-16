@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { authEncrypt, encodePayload, encodeUtf8 } from "$lib/cipherly";
+  import { authEncrypt, encodePayload } from "$lib/cipherly";
   import Chip from "$lib/components/Chip.svelte";
   import Section from "$lib/components/Section.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
@@ -12,31 +12,19 @@
 
   const AuthEncryptFormSchema = z
     .object({
-      text: z.string(),
-      file: z.instanceof(File).nullable(),
+      data: z.instanceof(Uint8Array),
+      filename: z.string().nullable(),
       emails: z.array(z.string().email()).min(1),
     })
-    .transform(async ({ text, file, emails }, ctx) => {
-      let data: Uint8Array;
-      if (file !== null) {
-        data = new Uint8Array(await file.arrayBuffer());
-      } else if (text.length > 0) {
-        data = encodeUtf8(text);
-      } else {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Either text or file input must be present",
-          path: ["plainText"],
-        });
-        return z.NEVER;
-      }
-      return { data, filename: file?.name, emails };
+    .refine(({ data, filename }) => data.length !== 0 || filename !== null, {
+      message: "Either text or file input must be present",
+      path: ["plainText"],
     });
   type AuthEncryptFormData = z.input<typeof AuthEncryptFormSchema>;
 
   let formData: AuthEncryptFormData = {
-    text: "",
-    file: null,
+    data: new Uint8Array(),
+    filename: null,
     emails: [],
   };
 
@@ -54,8 +42,8 @@
   <Section title="Auth Encrypt">
     <form
       class="space-y-6"
-      on:submit|preventDefault={async () => {
-        const result = await AuthEncryptFormSchema.safeParseAsync(formData);
+      on:submit|preventDefault={() => {
+        const result = AuthEncryptFormSchema.safeParse(formData);
         validationError = result.success ? null : result.error;
         if (!result.success) {
           validationError = result.error;
@@ -66,7 +54,7 @@
         payload = authEncrypt(
           result.data.data,
           result.data.emails,
-          result.data.filename,
+          result.data.filename ? result.data.filename : undefined,
         );
       }}
     >
@@ -87,8 +75,8 @@
         {/if}
 
         <TextOrFileInput
-          bind:text={formData.text}
-          bind:file={formData.file}
+          bind:data={formData.data}
+          bind:filename={formData.filename}
           placeholder="plaintext secret"
         />
       </div>
@@ -133,8 +121,8 @@
   {#if payload}
     <TextOrFileOutput
       kind="Encrypt"
-      data={payload.then((data) => encodePayload(data, !!formData.file))}
-      name={formData.file ? formData.file.name + ".cly" : null}
+      data={payload.then((data) => encodePayload(data, !!formData.filename))}
+      name={formData.filename ? formData.filename + ".cly" : null}
     />
   {/if}
 </div>

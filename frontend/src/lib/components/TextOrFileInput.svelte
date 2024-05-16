@@ -1,12 +1,39 @@
 <script lang="ts">
+  import { encodeUtf8 } from "$lib/cipherly";
   import FileDrop from "filedrop-svelte";
   import { filesize } from "filesize";
   import { FileText, HardDriveUpload, XCircle } from "lucide-svelte";
+  import { z } from "zod";
   import { Textarea } from "./ui/textarea";
 
-  export let placeholder: string;
+  const schema = z
+    .object({
+      text: z.string(),
+      file: z.instanceof(File).nullable(),
+    })
+    .transform(async ({ text, file }) => {
+      if (file !== null) {
+        return {
+          data: new Uint8Array(await file.arrayBuffer()),
+          filename: file?.name,
+        };
+      }
+      return { data: encodeUtf8(text), filename: null };
+    });
+
+  let file: File | null = null;
   export let text: string = "";
-  export let file: File | null = null;
+  export let placeholder: string;
+  export let data: Uint8Array = new Uint8Array();
+  export let filename: string | null;
+
+  async function parse(text: string, file: File | null) {
+    const output = await schema.parseAsync({ text, file });
+    data = output.data;
+    filename = output.filename;
+  }
+
+  $: parse(text, file);
 </script>
 
 {#if file}
