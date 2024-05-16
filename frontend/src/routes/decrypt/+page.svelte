@@ -59,8 +59,13 @@
     filename: null,
   };
   let payload: DecryptPayload = null;
+  let error: z.ZodError | null;
+  let password = "";
+  let plainText: Promise<Uint8Array[]> | null = null;
+
   $: {
     formData;
+    plainText = null;
     DecryptFormSchema.safeParseAsync(formData).then((p) => {
       if (p.success) {
         payload = p.data;
@@ -71,10 +76,6 @@
       }
     });
   }
-
-  let error: z.ZodError | null;
-  let password = "";
-  let plainText: Promise<Uint8Array[]> | null = null;
 
   async function decrypt(payload: DecryptPayload): Promise<Uint8Array[]> {
     if (payload?.es === EncryptionScheme.Auth) {
