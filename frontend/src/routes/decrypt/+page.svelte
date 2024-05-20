@@ -7,18 +7,16 @@
     isAuthPayload,
     isPasswordPayload,
     passwordDecrypt,
-    type Payload,
   } from "$lib/cipherly";
-  import Section from "$lib/components/Section.svelte";
+  import Label from "$lib/components/Label.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
   import ValidationError from "$lib/components/ValidationError.svelte";
   import { Button } from "$lib/components/ui/button";
-  import { Label } from "$lib/components/ui/label";
+  import { Input } from "$lib/components/ui/input";
   import { onMount } from "svelte";
   import { z } from "zod";
   import Auth from "./auth.svelte";
-  import Password from "./password.svelte";
 
   onMount(() => {
     renderLoginButton(document.getElementById("login-button"));
@@ -86,56 +84,47 @@
     }
     throw new Error("Invalid Encryption Scheme");
   }
-
-  function encryptionTitle(payload: Payload | null): string {
-    let baseTitle = "Decrypt";
-    if (!payload) return baseTitle;
-    const scheme = EncryptionScheme[payload.es];
-    if (!scheme) return baseTitle;
-    return `${scheme} ${baseTitle}`;
-  }
 </script>
 
-<div class="space-y-8">
-  <Section title={encryptionTitle(payload)}>
-    <form
-      class="space-y-6"
-      on:submit|preventDefault={() => {
-        plainText = null;
-        if (error) return;
-        plainText = decrypt(payload);
-      }}
-    >
-      <div class="space-y-2">
-        <Label
-          class="text-background-foreground text-sm uppercase tracking-wider"
-          for="payload"
-        >
-          Ciphertext Payload
-        </Label>
+<div class="space-y-8 p-1">
+  <form
+    class="space-y-4"
+    on:submit|preventDefault={() => {
+      plainText = null;
+      if (error) return;
+      plainText = decrypt(payload);
+    }}
+  >
+    <div>
+      <Label for="payload">Ciphertext Payload</Label>
+      <ValidationError {error} path="payload" />
+      <TextOrFileInput
+        text={location.hash ? location.href : ""}
+        bind:data={formData.data}
+        bind:filename={formData.filename}
+        placeholder="ciphertext payload"
+      />
+    </div>
 
-        <ValidationError {error} path="payload" />
-        <TextOrFileInput
-          text={location.hash ? location.href : ""}
-          bind:data={formData.data}
-          bind:filename={formData.filename}
-          placeholder="ciphertext payload"
+    {#if payload?.es === EncryptionScheme.Password}
+      <div>
+        <Label for="password">Password</Label>
+        <Input
+          id="password"
+          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
+          type="password"
+          placeholder="The password to use for decryption"
+          bind:value={password}
         />
       </div>
+    {:else if payload?.es === EncryptionScheme.Auth}
+      <Auth />
+    {/if}
 
-      {#if payload?.es === EncryptionScheme.Password}
-        <Password bind:value={password} />
-      {:else if payload?.es === EncryptionScheme.Auth}
-        <Auth />
-      {/if}
-
-      <div class="pt-4">
-        <Button class="min-w-[140px] text-lg font-bold" type="submit">
-          Decrypt
-        </Button>
-      </div>
-    </form>
-  </Section>
+    <Button class="min-w-[140px] text-lg font-bold" type="submit">
+      Decrypt
+    </Button>
+  </form>
 
   {#if plainText}
     <TextOrFileOutput kind="Decrypt" data={plainText} name={payload?.fn} />

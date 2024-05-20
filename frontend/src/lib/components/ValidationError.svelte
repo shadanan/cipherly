@@ -1,6 +1,7 @@
 <script lang="ts">
   import { AlertCircle } from "lucide-svelte";
   import type { ZodError } from "zod";
+  import IconText from "./IconText.svelte";
 
   export let path: string;
   export let error: ZodError | null;
@@ -10,8 +11,7 @@
 </script>
 
 {#if message}
-  <p class="flex items-center space-x-1 text-xs text-destructive">
-    <AlertCircle class="inline-block h-[12px] w-[12px]"></AlertCircle>
-    <span>{message}</span>
-  </p>
+  <IconText class="text-xs text-destructive" icon={AlertCircle}>
+    {message}
+  </IconText>
 {/if}
