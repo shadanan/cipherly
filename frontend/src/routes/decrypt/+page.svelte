@@ -84,7 +84,6 @@
       return z.NEVER;
     });
   type DecryptData = z.input<typeof DecryptData>;
-  type Output = z.infer<typeof DecryptData>;
 
   let decryptData: DecryptData = {
     payload: null,
@@ -119,7 +118,6 @@
       return;
     }
     error = null;
-    const parsedData: Output = parsed.data;
     if (isAuthPayload(parsed.data.payload)) {
       plainText = Promise.all([
         authDecrypt(parsed.data.payload, parsed.data.token!),

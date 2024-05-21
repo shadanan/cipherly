@@ -1,5 +1,6 @@
 <script lang="ts">
   import googleLogo from "$lib/assets/google.svg";
+  import type { User } from "$lib/auth";
   import Avatar from "$lib/components/Avatar.svelte";
   import { Button } from "$lib/components/ui/button";
   import Skeleton from "$lib/components/ui/skeleton/skeleton.svelte";
@@ -38,13 +39,6 @@
       },
     });
   });
-
-  type User = {
-    email: string;
-    name: string;
-    picture: string;
-    exp: number;
-  };
 
   function decodeUser(token: string | null): User | null {
     if (token === null) {
