@@ -1,9 +1,9 @@
 <script lang="ts">
   import { Info, X } from "lucide-svelte";
   import IconText from "./IconText.svelte";
+  import Input from "./Input.svelte";
   import { Badge } from "./ui/badge";
   import { Button } from "./ui/button";
-  import { Input } from "./ui/input";
 
   export let values: string[] = [];
   export let placeholder = "";
@@ -27,7 +27,7 @@
   }
 </script>
 
-<IconText class="text-xs text-blue-500" icon={Info}>
+<IconText class="text-xs text-blue-500 mb-1" icon={Info}>
   Press Enter after each entry
 </IconText>
 

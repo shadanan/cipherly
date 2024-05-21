@@ -4,7 +4,7 @@
   import { filesize } from "filesize";
   import { FileText, HardDriveUpload, XCircle } from "lucide-svelte";
   import { z } from "zod";
-  import { Textarea } from "./ui/textarea";
+  import Textarea from "./Textarea.svelte";
 
   const schema = z
     .object({
@@ -58,11 +58,7 @@
     </button>
   </div>
 {:else}
-  <Textarea
-    class="border-2 text-base text-foreground focus:ring-0 focus-visible:ring-0"
-    placeholder={`Enter the ${placeholder} here`}
-    bind:value={text}
-  />
+  <Textarea placeholder={`Enter the ${placeholder} here`} bind:value={text} />
 
   {#if !text}
     <FileDrop
