@@ -4,7 +4,7 @@
   import Footer from "$lib/components/Footer.svelte";
   import Main from "$lib/components/Main.svelte";
   import PrimaryNav from "$lib/components/PrimaryNav.svelte";
-  import { KeyRound, Unlock, User } from "lucide-svelte";
+  import { Lock, Unlock } from "lucide-svelte";
   import { ModeWatcher } from "mode-watcher";
   import "../app.pcss";
 </script>
@@ -22,14 +22,9 @@
           icon: Unlock,
         },
         {
-          title: "Password Encrypt",
-          href: "/password/",
-          icon: KeyRound,
-        },
-        {
-          title: "Auth Encrypt",
-          href: "/auth/",
-          icon: User,
+          title: "Encrypt",
+          href: "/encrypt/",
+          icon: Lock,
         },
       ]}
     />

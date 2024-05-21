@@ -75,7 +75,7 @@
       }}
     >
       <div
-        class="cursor-pointer py-6 px-3 border border-dashed mt-4 rounded-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500"
+        class="cursor-pointer py-6 px-3 border border-dashed mt-2 rounded-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500"
       >
         <div class="flex items-center space-x-3">
           <HardDriveUpload />

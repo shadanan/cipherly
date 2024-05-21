@@ -3,6 +3,7 @@ import {
   encode as encodeMessagePack,
 } from "@msgpack/msgpack";
 import { Base64 } from "js-base64";
+import { z } from "zod";
 
 function decodeBase64(data: string): Uint8Array {
   return Base64.toUint8Array(data);
@@ -90,29 +91,24 @@ export enum EncryptionScheme {
   Auth = 1,
 }
 
-type PayloadHeader = {
-  es: EncryptionScheme;
-  fn?: string;
-};
+const PayloadHeader = z.object({
+  es: z.nativeEnum(EncryptionScheme),
+  fn: z.string().nullable().optional(),
+});
+type PayloadHeader = z.infer<typeof PayloadHeader>;
 
-type PasswordBody = {
-  s: Uint8Array; // salt
-  iv: Uint8Array; // initialization vector
-  ct: Uint8Array; // ciphertext
-};
+const PasswordBody = z.object({
+  s: z.instanceof(Uint8Array),
+  iv: z.instanceof(Uint8Array),
+  ct: z.instanceof(Uint8Array),
+});
+type PasswordBody = z.infer<typeof PasswordBody>;
 
-type PasswordPayload = PayloadHeader & PasswordBody;
+export const PasswordPayload = PayloadHeader.merge(PasswordBody);
+export type PasswordPayload = z.infer<typeof PasswordPayload>;
 
 export function isPasswordPayload(payload: any): payload is PasswordPayload {
-  return (
-    payload !== null &&
-    typeof payload === "object" &&
-    "es" in payload &&
-    payload.es === EncryptionScheme.Password &&
-    "s" in payload &&
-    "iv" in payload &&
-    "ct" in payload
-  );
+  return PasswordPayload.safeParse(payload).success;
 }
 
 function encodePasswordPayload(
@@ -154,28 +150,22 @@ export async function passwordDecrypt(
   return await decrypt(cipherText, key, iv);
 }
 
-type AuthBody = {
-  k: string; // kid
-  n: Uint8Array; // nonce
-  se: Uint8Array; // sealed envelope
-  iv: Uint8Array; // initialization vector
-  ct: Uint8Array; // ciphertext
-};
+const AuthBody = z.object({
+  k: z.string(),
+  n: z.instanceof(Uint8Array),
+  se: z.instanceof(Uint8Array),
+  iv: z.instanceof(Uint8Array),
+  ct: z.instanceof(Uint8Array),
+});
+type AuthBody = z.infer<typeof AuthBody>;
 
-type AuthPayload = PayloadHeader & AuthBody;
+export const AuthPayload = PayloadHeader.merge(AuthBody);
+export type AuthPayload = z.infer<typeof AuthPayload>;
 
 export function isAuthPayload(payload: any): payload is AuthPayload {
-  return (
-    payload !== null &&
-    typeof payload === "object" &&
-    "es" in payload &&
-    payload.es === EncryptionScheme.Auth &&
-    "k" in payload &&
-    "n" in payload &&
-    "se" in payload &&
-    "iv" in payload &&
-    "ct" in payload
-  );
+  const parsed = AuthPayload.safeParse(payload);
+  console.log(parsed.error);
+  return AuthPayload.safeParse(payload).success;
 }
 
 function encodeAuthPayload(payload: AuthBody, filename?: string): Uint8Array {
@@ -191,7 +181,8 @@ function decodeAuthPayload(data: Uint8Array): AuthPayload {
   return decodeMessagePack(data) as AuthPayload;
 }
 
-export type Payload = PasswordPayload | AuthPayload;
+export const Payload = z.union([PasswordPayload, AuthPayload]);
+export type Payload = z.infer<typeof Payload>;
 
 function decryptUrl() {
   return `${location.protocol}//${location.host}/decrypt/#`;
@@ -219,7 +210,7 @@ export function decodePayload(data: Uint8Array, file: boolean): Payload {
   if (!file) {
     payloadData = decodeBase64(decodeUtf8(payloadData));
   }
-  return decodeMessagePack(payloadData) as Payload;
+  return Payload.parse(decodeMessagePack(payloadData));
 }
 
 type Envelope = {

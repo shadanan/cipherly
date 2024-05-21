@@ -1,5 +1,6 @@
 <script lang="ts">
   import { Info, X } from "lucide-svelte";
+  import IconText from "./IconText.svelte";
   import { Badge } from "./ui/badge";
   import { Button } from "./ui/button";
   import { Input } from "./ui/input";
@@ -26,15 +27,13 @@
   }
 </script>
 
-<p class="flex items-center space-x-1 text-xs text-blue-500">
-  <Info class="inline-block h-[12px] w-[12px]"></Info>
-  <span>Press Enter after each entry</span>
-</p>
+<IconText class="text-xs text-blue-500" icon={Info}>
+  Press Enter after each entry
+</IconText>
 
 <Input
   class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
   {placeholder}
-  required={values.length === 0}
   bind:value={input}
   on:blur={addAndClear}
   on:keydown={(e) => {
@@ -49,7 +48,7 @@
 {#if values.length > 0}
   <div class="flex flex-wrap pt-2">
     {#each values as value}
-      <Badge variant="secondary" class="mb-2 mr-2 space-x-1 text-sm">
+      <Badge variant="secondary" class="space-x-1 text-sm">
         <span>{value}</span>
         <Button
           class="m-0 h-4 w-4 p-0 "

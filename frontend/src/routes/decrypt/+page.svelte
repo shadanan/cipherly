@@ -1,30 +1,23 @@
 <script lang="ts">
-  import { renderLoginButton, token } from "$lib/auth";
   import {
     EncryptionScheme,
+    Payload,
     authDecrypt,
     decodePayload,
     isAuthPayload,
     isPasswordPayload,
     passwordDecrypt,
-    type Payload,
   } from "$lib/cipherly";
-  import Section from "$lib/components/Section.svelte";
+  import Label from "$lib/components/Label.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
   import ValidationError from "$lib/components/ValidationError.svelte";
   import { Button } from "$lib/components/ui/button";
-  import { Label } from "$lib/components/ui/label";
-  import { onMount } from "svelte";
+  import { Input } from "$lib/components/ui/input";
   import { z } from "zod";
   import Auth from "./auth.svelte";
-  import Password from "./password.svelte";
 
-  onMount(() => {
-    renderLoginButton(document.getElementById("login-button"));
-  });
-
-  const DecryptFormSchema = z
+  const InputData = z
     .object({
       data: z.instanceof(Uint8Array),
       filename: z.string().nullable(),
@@ -42,102 +35,143 @@
           });
         }
       }
-      return null;
-    })
-    .refine(
-      (payload) =>
-        payload === null ||
-        isPasswordPayload(payload) ||
-        isAuthPayload(payload),
-      { message: "Invalid Cipherly payload", path: ["payload"] },
-    );
-  type DecryptFormData = z.input<typeof DecryptFormSchema>;
-  type DecryptPayload = z.output<typeof DecryptFormSchema>;
+      return z.NEVER;
+    });
+  type InputData = z.input<typeof InputData>;
 
-  let formData: DecryptFormData = {
+  let inputData: InputData = {
     data: new Uint8Array(),
     filename: null,
   };
-  let payload: DecryptPayload = null;
+
+  const DecryptData = z
+    .object({
+      payload: Payload.nullable(),
+      password: z.string().default(""),
+      token: z.string().nullable(),
+    })
+    .transform(({ payload, password, token }, ctx) => {
+      if (isPasswordPayload(payload)) {
+        if (!password) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Password must be present",
+            path: ["password"],
+            fatal: true,
+          });
+          return z.NEVER;
+        }
+        return { payload, password };
+      }
+      if (isAuthPayload(payload)) {
+        if (!token) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "User must be authorized",
+            path: ["token"],
+            fatal: true,
+          });
+          return z.NEVER;
+        }
+        return { payload, token };
+      }
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Payload must be present",
+        path: ["payload"],
+        fatal: true,
+      });
+      return z.NEVER;
+    });
+  type DecryptData = z.input<typeof DecryptData>;
+
+  let decryptData: DecryptData = {
+    payload: null,
+    password: "",
+    token: null,
+  };
+
   let error: z.ZodError | null;
-  let password = "";
   let plainText: Promise<Uint8Array[]> | null = null;
 
   $: {
-    formData;
+    inputData;
     plainText = null;
-    DecryptFormSchema.safeParseAsync(formData).then((p) => {
+    InputData.safeParseAsync(inputData).then((p) => {
       if (p.success) {
-        payload = p.data;
+        decryptData.payload = p.data;
         error = null;
       } else {
-        payload = null;
+        decryptData.payload = null;
         error = p.error;
       }
     });
   }
 
-  async function decrypt(payload: DecryptPayload): Promise<Uint8Array[]> {
-    if (payload?.es === EncryptionScheme.Auth) {
-      return [await authDecrypt(payload, $token!)];
+  function decrypt() {
+    plainText = null;
+    if (error) return;
+    const parsed = DecryptData.safeParse(decryptData);
+    if (!parsed.success) {
+      error = parsed.error;
+      plainText = null;
+      return;
     }
-    if (payload?.es === EncryptionScheme.Password) {
-      return [await passwordDecrypt(payload, password)];
+    error = null;
+    if (isAuthPayload(parsed.data.payload)) {
+      plainText = Promise.all([
+        authDecrypt(parsed.data.payload, parsed.data.token!),
+      ]);
+    } else if (isPasswordPayload(parsed.data.payload)) {
+      plainText = Promise.all([
+        passwordDecrypt(parsed.data.payload, parsed.data.password!),
+      ]);
     }
-    throw new Error("Invalid Encryption Scheme");
-  }
-
-  function encryptionTitle(payload: Payload | null): string {
-    let baseTitle = "Decrypt";
-    if (!payload) return baseTitle;
-    const scheme = EncryptionScheme[payload.es];
-    if (!scheme) return baseTitle;
-    return `${scheme} ${baseTitle}`;
   }
 </script>
 
-<div class="space-y-8">
-  <Section title={encryptionTitle(payload)}>
-    <form
-      class="space-y-6"
-      on:submit|preventDefault={() => {
-        plainText = null;
-        if (error) return;
-        plainText = decrypt(payload);
-      }}
-    >
-      <div class="space-y-2">
-        <Label
-          class="text-background-foreground text-sm uppercase tracking-wider"
-          for="payload"
-        >
-          Ciphertext Payload
-        </Label>
+<div class="space-y-8 p-1">
+  <form class="space-y-4" on:submit|preventDefault={decrypt}>
+    <div>
+      <Label for="payload">Ciphertext Payload</Label>
+      <ValidationError {error} path="payload" />
+      <TextOrFileInput
+        text={location.hash ? location.href : ""}
+        bind:data={inputData.data}
+        bind:filename={inputData.filename}
+        placeholder="ciphertext payload"
+      />
+    </div>
 
-        <ValidationError {error} path="payload" />
-        <TextOrFileInput
-          text={location.hash ? location.href : ""}
-          bind:data={formData.data}
-          bind:filename={formData.filename}
-          placeholder="ciphertext payload"
+    {#if decryptData.payload?.es === EncryptionScheme.Password}
+      <div>
+        <Label for="password">Password</Label>
+        <ValidationError {error} path="password" />
+        <Input
+          id="password"
+          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
+          type="password"
+          placeholder="The password to use for decryption"
+          bind:value={decryptData.password}
         />
       </div>
-
-      {#if payload?.es === EncryptionScheme.Password}
-        <Password bind:value={password} />
-      {:else if payload?.es === EncryptionScheme.Auth}
-        <Auth />
-      {/if}
-
-      <div class="pt-4">
-        <Button class="min-w-[140px] text-lg font-bold" type="submit">
-          Decrypt
-        </Button>
+    {:else if decryptData.payload?.es === EncryptionScheme.Auth}
+      <div>
+        <ValidationError {error} path="token" />
+        <Auth bind:token={decryptData.token} />
       </div>
-    </form>
-  </Section>
+    {/if}
+
+    <Button class="min-w-[140px] text-lg font-bold" type="submit">
+      Decrypt
+    </Button>
+  </form>
 
   {#if plainText}
-    <TextOrFileOutput kind="Decrypt" data={plainText} name={payload?.fn} />
+    <TextOrFileOutput
+      kind="Decrypt"
+      data={plainText}
+      name={decryptData.payload?.fn}
+    />
   {/if}
 </div>
