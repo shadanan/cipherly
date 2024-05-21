@@ -128,7 +128,7 @@ function decodePasswordPayload(data: Uint8Array): PasswordPayload {
 }
 
 export async function passwordEncrypt(
-  plainText: Uint8Array,
+  plaintext: Uint8Array,
   password: string,
   filename?: string,
 ): Promise<Uint8Array> {
@@ -136,18 +136,18 @@ export async function passwordEncrypt(
   const key = await deriveKey(encodeUtf8(password), salt);
 
   const iv = generateIv();
-  const cipherText = await encrypt(plainText, key, iv);
+  const ciphertext = await encrypt(plaintext, key, iv);
 
-  return encodePasswordPayload({ s: salt, iv: iv, ct: cipherText }, filename);
+  return encodePasswordPayload({ s: salt, iv: iv, ct: ciphertext }, filename);
 }
 
 export async function passwordDecrypt(
   payload: Payload,
   password: string,
 ): Promise<Uint8Array> {
-  const { s: salt, iv: iv, ct: cipherText } = payload as PasswordPayload;
+  const { s: salt, iv: iv, ct: ciphertext } = payload as PasswordPayload;
   const key = await deriveKey(encodeUtf8(password), salt);
-  return await decrypt(cipherText, key, iv);
+  return await decrypt(ciphertext, key, iv);
 }
 
 const AuthBody = z.object({
@@ -279,13 +279,13 @@ async function unseal(
 }
 
 export async function authEncrypt(
-  plainText: Uint8Array,
+  plaintext: Uint8Array,
   emails: string[],
   filename?: string,
 ): Promise<Uint8Array> {
   const dek = await generateKey();
   const iv = generateIv();
-  const cipherText = await encrypt(plainText, dek, iv);
+  const ciphertext = await encrypt(plaintext, dek, iv);
   const { kid, nonce, data } = await seal({ dek, emails });
   return encodeAuthPayload(
     {
@@ -293,7 +293,7 @@ export async function authEncrypt(
       n: nonce,
       se: data,
       iv: iv,
-      ct: cipherText,
+      ct: ciphertext,
     },
     filename,
   );
@@ -308,11 +308,11 @@ export async function authDecrypt(
     n: nonce,
     se: data,
     iv: iv,
-    ct: cipherText,
+    ct: ciphertext,
   } = payload as AuthPayload;
   const envelope = await unseal({ kid, nonce, data }, token);
-  const plainText = await decrypt(cipherText, envelope.dek, iv);
-  return plainText;
+  const plaintext = await decrypt(ciphertext, envelope.dek, iv);
+  return plaintext;
 }
 
 export const exportedForTesting = {

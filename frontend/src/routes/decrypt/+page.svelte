@@ -8,12 +8,12 @@
     isPasswordPayload,
     passwordDecrypt,
   } from "$lib/cipherly";
+  import Input from "$lib/components/Input.svelte";
   import Label from "$lib/components/Label.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
   import ValidationError from "$lib/components/ValidationError.svelte";
   import { Button } from "$lib/components/ui/button";
-  import { Input } from "$lib/components/ui/input";
   import { z } from "zod";
   import Auth from "./auth.svelte";
 
@@ -92,11 +92,11 @@
   };
 
   let error: z.ZodError | null;
-  let plainText: Promise<Uint8Array[]> | null = null;
+  let plaintext: Promise<Uint8Array[]> | null = null;
 
   $: {
     inputData;
-    plainText = null;
+    plaintext = null;
     InputData.safeParseAsync(inputData).then((p) => {
       if (p.success) {
         decryptData.payload = p.data;
@@ -109,21 +109,21 @@
   }
 
   function decrypt() {
-    plainText = null;
+    plaintext = null;
     if (error) return;
     const parsed = DecryptData.safeParse(decryptData);
     if (!parsed.success) {
       error = parsed.error;
-      plainText = null;
+      plaintext = null;
       return;
     }
     error = null;
     if (isAuthPayload(parsed.data.payload)) {
-      plainText = Promise.all([
+      plaintext = Promise.all([
         authDecrypt(parsed.data.payload, parsed.data.token!),
       ]);
     } else if (isPasswordPayload(parsed.data.payload)) {
-      plainText = Promise.all([
+      plaintext = Promise.all([
         passwordDecrypt(parsed.data.payload, parsed.data.password!),
       ]);
     }
@@ -149,7 +149,6 @@
         <ValidationError {error} path="password" />
         <Input
           id="password"
-          class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
           type="password"
           placeholder="The password to use for decryption"
           bind:value={decryptData.password}
@@ -167,10 +166,10 @@
     </Button>
   </form>
 
-  {#if plainText}
+  {#if plaintext}
     <TextOrFileOutput
       kind="Decrypt"
-      data={plainText}
+      data={plaintext}
       name={decryptData.payload?.fn}
     />
   {/if}

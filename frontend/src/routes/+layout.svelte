@@ -2,7 +2,6 @@
   import Banner from "$lib/components/Banner.svelte";
   import DarkModeToggle from "$lib/components/DarkModeToggle.svelte";
   import Footer from "$lib/components/Footer.svelte";
-  import Main from "$lib/components/Main.svelte";
   import PrimaryNav from "$lib/components/PrimaryNav.svelte";
   import { Lock, Unlock } from "lucide-svelte";
   import { ModeWatcher } from "mode-watcher";
@@ -17,24 +16,22 @@
     <PrimaryNav
       items={[
         {
-          title: "Decrypt",
-          href: "/decrypt/",
-          icon: Unlock,
-        },
-        {
           title: "Encrypt",
           href: "/encrypt/",
           icon: Lock,
         },
+        {
+          title: "Decrypt",
+          href: "/decrypt/",
+          icon: Unlock,
+        },
       ]}
     />
-    <Main>
-      <div class="px-4 lg:px-10">
-        <div class="flex w-full flex-1 flex-col overflow-hidden">
-          <slot />
-        </div>
-      </div>
-    </Main>
+    <main
+      class="bg-background p-4 lg:p-10 flex w-full flex-1 flex-col overflow-hidden"
+    >
+      <slot />
+    </main>
   </section>
   <Footer />
 </div>

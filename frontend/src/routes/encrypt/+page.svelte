@@ -2,13 +2,13 @@
   import { authEncrypt, encodePayload, passwordEncrypt } from "$lib/cipherly";
   import Chip from "$lib/components/Chip.svelte";
   import IconText from "$lib/components/IconText.svelte";
+  import Input from "$lib/components/Input.svelte";
   import Label from "$lib/components/Label.svelte";
   import TextOrFileInput from "$lib/components/TextOrFileInput.svelte";
   import TextOrFileOutput from "$lib/components/TextOrFileOutput.svelte";
   import ValidationError from "$lib/components/ValidationError.svelte";
   import { Button } from "$lib/components/ui/button";
   import { Card } from "$lib/components/ui/card";
-  import { Input } from "$lib/components/ui/input";
   import * as Tabs from "$lib/components/ui/tabs";
   import { KeyRound, User } from "lucide-svelte";
   import { z } from "zod";
@@ -44,7 +44,7 @@
     })
     .refine(({ data, filename }) => data.length !== 0 || filename !== null, {
       message: "Either text or file input must be present",
-      path: ["plainText"],
+      path: ["plaintext"],
     });
   type EncryptData = z.input<typeof EncryptData>;
 
@@ -95,8 +95,8 @@
     }}
   >
     <div>
-      <Label for="plainText">Plaintext</Label>
-      <ValidationError {error} path="plainText" />
+      <Label for="plaintext">Plaintext</Label>
+      <ValidationError {error} path="plaintext" />
       <TextOrFileInput
         bind:data={encrypt.data}
         bind:filename={encrypt.filename}
@@ -107,7 +107,7 @@
     <div>
       <Label for="mode">Encryption Type</Label>
       <Tabs.Root id="mode" bind:value={encrypt.mode}>
-        <Tabs.List class="grid w-full grid-cols-2">
+        <Tabs.List class="grid w-full grid-cols-2 h-auto">
           <Tabs.Trigger value="policy">
             <IconText icon={User}>Policy</IconText>
           </Tabs.Trigger>
@@ -130,7 +130,7 @@
             <ValidationError {error} path="password" />
             <Input
               id="password"
-              class="border-2 border-muted text-base text-foreground focus:ring-0 focus-visible:ring-0"
+              type="password"
               placeholder="The password to use for encryption"
               bind:value={encrypt.password}
             />

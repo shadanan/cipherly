@@ -11,7 +11,7 @@
 </script>
 
 {#if message}
-  <IconText class="text-xs text-destructive" icon={AlertCircle}>
+  <IconText class="text-xs text-destructive mb-1" icon={AlertCircle}>
     {message}
   </IconText>
 {/if}

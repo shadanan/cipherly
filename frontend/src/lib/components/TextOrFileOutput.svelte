@@ -2,10 +2,10 @@
   import { decodeUtf8 } from "$lib/cipherly";
   import CopyText from "./CopyText.svelte";
   import EncryptionAlert from "./EncryptionAlert.svelte";
+  import Textarea from "./Textarea.svelte";
   import { Button } from "./ui/button";
   import { Label } from "./ui/label";
   import { Skeleton } from "./ui/skeleton";
-  import { Textarea } from "./ui/textarea";
 
   export let kind: string;
   export let data: Promise<Uint8Array[]>;
@@ -41,8 +41,8 @@
         Ciphertext Payload
       </Label>
       <Textarea
-        class="focus-visible:ring-none disabled:opacity-1 border-2  border-muted text-base focus-visible:outline-none disabled:cursor-text disabled:text-green-600"
         id="payload"
+        class="focus-visible:ring-none disabled:opacity-1 border-2  border-muted text-base focus-visible:outline-none disabled:cursor-text disabled:text-green-600"
         disabled
         value={text}
         placeholder="The plain text secret to encrypt"
