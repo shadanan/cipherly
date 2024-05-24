@@ -6,9 +6,7 @@
   <div class="mb-8 flex w-full flex-col items-center space-y-4 text-center">
     <a href="/">
       <div class="flex items-center space-x-2">
-        <div class="w-10 h-10">
-          <img alt="The project logo" src={cipherlyLogo} class="w-10" />
-        </div>
+        <img alt="The project logo" src={cipherlyLogo} width="40px" />
         <div class="text-4xl font-extrabold uppercase">Cipherly</div>
       </div>
     </a>
