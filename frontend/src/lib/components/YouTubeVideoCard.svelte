@@ -27,7 +27,7 @@
   >
     <img class="object-cover" src={thumbnail} alt="" srcset="" />
     <div class="flex items-center space-x-4 px-4">
-      <img src={youTubeLogo} alt="YouTube" class="w-6 h-6" />
+      <img src={youTubeLogo} alt="YouTube" width="24px" />
       <p class="text-sm py-2 font-medium leading-tight">
         {videoTitle}
       </p>
