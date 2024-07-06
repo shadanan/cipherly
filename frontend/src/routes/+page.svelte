@@ -2,13 +2,16 @@
   import YouTubeVideoCard from "$lib/components/YouTubeVideoCard.svelte";
   const youTubeVideos = [
     {
-      id: "oKCNhjF9k8c",
-      title: "Encrypting a Secret with a Password directly in the Browser",
+      id: "fP57rGxokow",
+      title: "Encrypting sensitive files with Cipherly",
     },
     {
       id: "AsxSR4mtCuM",
-      title:
-        "Encrypting a Secret that can only be Decrypted by the Authorized User",
+      title: "Encrypting a secret decryptable only by the authorized user",
+    },
+    {
+      id: "oKCNhjF9k8c",
+      title: "Encrypting a secret without sending it over the internet",
     },
   ];
 </script>
