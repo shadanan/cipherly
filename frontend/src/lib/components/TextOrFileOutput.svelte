@@ -3,7 +3,6 @@
   import CopyText from "./CopyText.svelte";
   import EncryptionAlert from "./EncryptionAlert.svelte";
   import Textarea from "./Textarea.svelte";
-  import { Button } from "./ui/button";
   import { Label } from "./ui/label";
   import { Skeleton } from "./ui/skeleton";
 
@@ -20,7 +19,7 @@
     a.click();
   }
 
-  if (name !== null) {
+  $: if (name !== null) {
     data.then((data) => save(data, name));
   }
 </script>
@@ -42,7 +41,7 @@
       </Label>
       <Textarea
         id="payload"
-        class="focus-visible:ring-none disabled:opacity-1 border-2  border-muted text-base focus-visible:outline-none disabled:cursor-text disabled:text-green-600"
+        class="focus-visible:ring-none disabled:opacity-1 border-2 border-muted text-base focus-visible:outline-none disabled:cursor-text disabled:text-green-600"
         disabled
         value={text}
         placeholder="The plain text secret to encrypt"
@@ -50,10 +49,6 @@
       <div class="space-x-2 pt-4">
         <CopyText label="Ciphertext" {text} />
       </div>
-    {:else}
-      <Button on:click={() => save(data, name)}>
-        Download {name}
-      </Button>
     {/if}
   {:catch error}
     <EncryptionAlert title={`Failed to ${kind}`} {error} />
