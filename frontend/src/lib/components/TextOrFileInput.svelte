@@ -1,10 +1,9 @@
 <script lang="ts">
   import { encodeUtf8 } from "$lib/cipherly";
-  import FileDrop from "filedrop-svelte";
   import { filesize } from "filesize";
   import { FileText, HardDriveUpload, XCircle } from "lucide-svelte";
   import { z } from "zod";
-  import Textarea from "./Textarea.svelte";
+  import Button from "./ui/button/button.svelte";
 
   const schema = z
     .object({
@@ -21,7 +20,7 @@
       return { data: encodeUtf8(text), filename: null };
     });
 
-  let file: File | null = null;
+  let files: FileList | null = null;
   export let text: string = "";
   export let placeholder: string;
   export let data: Uint8Array = new Uint8Array();
@@ -33,9 +32,20 @@
     filename = output.filename;
   }
 
+  function handleUpload(event: any) {
+    document.getElementById("fileInput")?.click();
+  }
+
+  function drop(event: DragEvent) {
+    event.preventDefault();
+    files = event.dataTransfer?.files ?? null;
+  }
+
+  $: file = files?.item(0) ?? null;
   $: parse(text, file);
 </script>
 
+<input id="fileInput" type="file" bind:files hidden />
 {#if file}
   <div
     class="border px-3 py-4 rounded-md flex bg-accent justify-between items-center"
@@ -58,31 +68,21 @@
     </button>
   </div>
 {:else}
-  <Textarea placeholder={`Enter the ${placeholder} here`} bind:value={text} />
+  <div class="space-y-2">
+    <textarea
+      class="border-2 text-base text-foreground focus:ring-0 focus-visible:ring-0 rounded-md w-full flex min-h-[80px] border-input bg-background px-3 py-2 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+      placeholder={`Enter the ${placeholder} or drag and drop a ${placeholder} file here`}
+      bind:value={text}
+      on:drop={(e) => drop(e)}
+    ></textarea>
 
-  {#if !text}
-    <FileDrop
-      clickToUpload={true}
-      fileLimit={1}
-      multiple={false}
-      on:filedrop|once={(e) => {
-        text = "";
-        file = e.detail.files?.accepted[0];
-      }}
-    >
-      <div
-        class="cursor-pointer py-6 px-3 border border-dashed mt-2 rounded-sm bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-500"
-      >
+    {#if !text}
+      <Button variant="outline" on:click={(e) => handleUpload(e)}>
         <div class="flex items-center space-x-3">
-          <HardDriveUpload />
-          <div>
-            <div>Or drag and drop a {placeholder} file here</div>
-            <div class="text-primary underline underline-offset-4">
-              Browse files
-            </div>
-          </div>
+          <HardDriveUpload class="w-5" />
+          <span>Upload {placeholder} file</span>
         </div>
-      </div>
-    </FileDrop>
-  {/if}
+      </Button>
+    {/if}
+  </div>
 {/if}
